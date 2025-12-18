@@ -13,7 +13,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
     {
       icon: Upload,
       title: "Easy Upload",
-      description: "Upload call recordings directly from Google Drive with one click"
+      description: "Upload call recordings directly from your device with secure cloud storage"
     },
     {
       icon: BarChart3,
@@ -48,72 +48,62 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation Bar */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex justify-between items-center h-16">
+      {/* Navigation Bar - Minimal Luxury */}
+      <nav className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-lg bg-card/95">
+        <div className="max-w-7xl mx-auto px-8">
+          <div className="flex justify-between items-center h-20">
             {/* Left side - Logo */}
             <div className="flex items-center">
               <img 
-                src="/logo2.png" 
-                alt="Tasknova" 
-                className="h-10 w-auto cursor-pointer hover:opacity-80 transition-opacity"
-                onError={(e) => {
-                  e.currentTarget.src = "/logo.png";
-                }}
+                src="/panchsil_logo.png.jpg" 
+                alt="Panchshil" 
+                className="h-12 w-auto cursor-pointer hover:opacity-70 transition-opacity duration-300"
                 onClick={() => window.location.href = '/'}
               />
             </div>
             
             {/* Right side - Auth buttons */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
               <Button 
                 variant="ghost" 
                 onClick={onGetStarted}
-                className="text-gray-700 hover:text-accent-blue"
+                className="text-foreground hover:text-accent-blue font-medium tracking-wide"
               >
-                Log In
-              </Button>
-              <Button 
-                onClick={onGetStarted}
-                className="bg-accent-blue text-white hover:bg-accent-blue/90"
-              >
-                Sign Up
+                ENTER
               </Button>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 px-6 py-20 text-gray-900">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="flex items-center mb-6">
-                <Badge className="bg-accent-blue/10 text-accent-blue border-accent-blue/20">
-                  AI-Powered Call Analysis
-                </Badge>
+      {/* Hero Section - Luxury Minimal */}
+      <section className="relative bg-background px-8 py-32 text-foreground">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <div className="space-y-8">
+              <div className="flex items-center">
+                <div className="h-px w-12 bg-accent-blue mr-4"></div>
+                <span className="text-sm tracking-widest text-muted-foreground uppercase">Panchshil Voice Intelligence</span>
               </div>
-              <h1 className="text-5xl font-bold leading-tight mb-6">
-                <span className="text-accent-blue">Tasknova</span>
+              <h1 className="text-6xl font-bold leading-tight tracking-tight">
+                Elevate Your
                 <br />
-                Transform Your Call Performance with 
-                <span className="text-accent-blue"> AI Insights</span>
+                <span className="text-primary">Communication</span>
+                <br />
+                Excellence
               </h1>
-              <p className="text-xl text-gray-700 mb-8 leading-relaxed">
-                Upload call recordings from Google Drive and get detailed analysis reports 
-                with sentiment scoring, engagement metrics, and actionable insights to boost your team's performance.
+              <p className="text-lg text-muted-foreground leading-relaxed max-w-lg">
+                Premium AI-powered voice analysis for discerning professionals. 
+                Transform conversations into actionable intelligence with unparalleled precision.
               </p>
-              <div className="flex justify-start">
+              <div className="flex justify-start pt-4">
                 <Button 
-                  size="xl" 
-                  variant="accent" 
+                  size="lg" 
                   onClick={onGetStarted}
-                  className="bg-accent-blue text-white hover:bg-accent-blue/90 shadow-lg"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-6 text-base tracking-widest uppercase font-medium transition-all duration-300"
                 >
-                  Get Started Free
-                  <ArrowRight className="h-5 w-5" />
+                  Begin Your Journey
+                  <ArrowRight className="h-5 w-5 ml-2" />
                 </Button>
               </div>
             </div>
@@ -231,27 +221,31 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="px-6 py-20">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-6">Powerful Features for Sales Teams</h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Everything you need to analyze, understand, and improve your call performance
+      {/* Features Section - Grid Luxury Layout */}
+      <section className="px-8 py-32 bg-card">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-20">
+            <div className="flex items-center mb-6">
+              <div className="h-px w-12 bg-accent-blue mr-4"></div>
+              <span className="text-sm tracking-widest text-muted-foreground uppercase">Capabilities</span>
+            </div>
+            <h2 className="text-5xl font-bold mb-6 tracking-tight">Excellence in Every Detail</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
+              Precision-engineered tools for the modern professional
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="border-2 hover:border-accent-blue transition-colors">
-                <CardHeader>
-                  <div className="h-12 w-12 bg-accent-blue-light rounded-lg flex items-center justify-center mb-4">
-                    <feature.icon className="h-6 w-6 text-accent-blue" />
+              <Card key={index} className="border border-border hover:border-accent-blue transition-all duration-300 bg-background group">
+                <CardHeader className="space-y-6">
+                  <div className="h-14 w-14 border border-border group-hover:border-accent-blue flex items-center justify-center transition-all duration-300">
+                    <feature.icon className="h-7 w-7 text-muted-foreground group-hover:text-accent-blue transition-colors" />
                   </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
+                  <CardTitle className="text-xl font-semibold tracking-wide">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-base leading-relaxed">
+                  <CardDescription className="text-base leading-relaxed text-muted-foreground">
                     {feature.description}
                   </CardDescription>
                 </CardContent>
@@ -425,22 +419,19 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
               <img 
-                src="/logo.png" 
-                alt="Tasknova" 
-                className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity"
-                onError={(e) => {
-                  e.currentTarget.src = "/logo2.png";
-                }}
+                src="/panchsil_logo.png.jpg" 
+                alt="Panchshil" 
+                className="h-8 w-auto cursor-pointer hover:opacity-70 transition-opacity duration-300"
                 onClick={() => window.location.href = '/'}
               />
               <div>
-                <p className="font-semibold text-foreground">Tasknova</p>
-                <p className="text-sm text-muted-foreground">AI-Powered Call Analysis</p>
+                <p className="font-semibold text-foreground">Panchshil</p>
+                <p className="text-sm text-muted-foreground">Voice Intelligence Platform</p>
               </div>
             </div>
             <div className="text-center md:text-right">
               <p className="text-sm text-muted-foreground">
-                © 2025 Tasknova. All rights reserved.
+                © 2025 Panchshil Realty. All rights reserved.
               </p>
             </div>
           </div>

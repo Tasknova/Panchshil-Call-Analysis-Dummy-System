@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Upload, Play, Download, MoreHorizontal, TrendingUp, TrendingDown, Users, Phone, Star, AlertTriangle, Trash2, BarChart3, Loader2, User, LogOut, UserPlus, FolderOpen, FileSpreadsheet } from "lucide-react";
+import { Upload, Play, Download, MoreHorizontal, TrendingUp, TrendingDown, Users, Phone, Star, AlertTriangle, Trash2, BarChart3, Loader2, User, UserPlus, FolderOpen, FileSpreadsheet, RefreshCw } from "lucide-react";
 import { useDashboardStats, useRecordings, useAnalyses, useDeleteRecording } from "@/hooks/useSupabaseData";
 import AddRecordingModal from "./AddRecordingModal";
 import AllLeadsPage from "./AllLeadsPage";
@@ -31,7 +31,7 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   
   // Analysis notifications disabled per user request
   // useAnalysisNotifications();
@@ -182,137 +182,149 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
     }
   };
 
-  const handleSignOut = async () => {
+  const handleRetryRecording = async (recording: any, analysis: any) => {
+    const WEBHOOK_URL = "https://n8nautomation.site/webhook/ad2aa239-7a2f-467d-a95a-a66a2ca43537";
+    
     try {
-      await signOut();
       toast({
-        title: "Signed out successfully",
-        description: "You have been logged out of your account.",
+        title: "Retrying Analysis",
+        description: "Sending recording for reprocessing...",
       });
+
+      const webhookPayload = {
+        recording_id: recording.id,
+        analysis_id: analysis?.id || null,
+        recording_name: recording.file_name || 'Unnamed Recording',
+        recording_url: recording.stored_file_url
+      };
+
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Retry Successful",
+          description: "Your recording has been queued for reprocessing.",
+        });
+        
+        // Refresh the data
+        queryClient.invalidateQueries({ queryKey: ['recordings'] });
+        queryClient.invalidateQueries({ queryKey: ['analyses'] });
+      } else {
+        throw new Error(`Webhook returned ${response.status}`);
+      }
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('Retry failed:', error);
       toast({
-        title: "Sign out failed",
-        description: "There was an error signing you out. Please try again.",
+        title: "Retry Failed",
+        description: "Failed to send recording for reprocessing. Please try again.",
         variant: "destructive",
       });
     }
   };
 
+
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card px-6 py-4">
+      {/* Header - Luxury Minimal */}
+      <header className="border-b border-border bg-card px-8 py-5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
             <img 
-              src="/logo.png" 
-              alt="Tasknova" 
-              className="h-10 w-auto cursor-pointer hover:opacity-80 transition-opacity"
-              onError={(e) => {
-                e.currentTarget.src = "/logo2.png";
-              }}
+              src="/panchsil_logo.png.jpg" 
+              alt="Panchshil" 
+              className="h-12 w-auto cursor-pointer hover:opacity-70 transition-opacity duration-300"
               onClick={() => navigate('/')}
             />
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Tasknova Voice Analysis</h1>
-              
+            <div className="border-l border-border pl-6">
+              <h1 className="text-xl font-semibold text-foreground tracking-wide">Voice Intelligence</h1>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Button 
-              variant="outline"
-              onClick={onShowProfile}
-              className="flex items-center gap-2"
-            >
-              <User className="h-4 w-4" />
-              Profile
-            </Button>
-            <Button 
-              variant="accent" 
-              size="lg" 
-              className="gap-2"
+              variant="default" 
+              size="default" 
+              className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground tracking-wide uppercase text-sm font-medium px-6"
               onClick={() => setIsAddModalOpen(true)}
             >
               <Upload className="h-4 w-4" />
-              Add Recording
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={handleSignOut}
-              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign Out
+              Upload Recording
             </Button>
           </div>
         </div>
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 border-r bg-card p-6">
-          <nav className="space-y-2">
+        {/* Sidebar - Elegant Minimal */}
+        <aside className="w-72 border-r border-border bg-card px-6 py-8">
+          <nav className="space-y-3">
               <Button 
-                variant={selectedTab === "overview" ? "accent" : "ghost"} 
-                className="w-full justify-start"
+                variant={selectedTab === "overview" ? "default" : "ghost"} 
+                className={`w-full justify-start font-medium tracking-wide text-sm uppercase transition-all ${selectedTab === "overview" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 onClick={() => setSelectedTab("overview")}
               >
-                <TrendingUp className="h-4 w-4" />
-                Dashboard
+                <TrendingUp className="h-4 w-4 mr-3" />
+                Overview
               </Button>
               <Button 
-                variant={selectedTab === "recordings" ? "accent" : "ghost"} 
-                className="w-full justify-start"
+                variant={selectedTab === "recordings" ? "default" : "ghost"} 
+                className={`w-full justify-start font-medium tracking-wide text-sm uppercase transition-all ${selectedTab === "recordings" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 onClick={() => setSelectedTab("recordings")}
               >
-                <Phone className="h-4 w-4" />
+                <Phone className="h-4 w-4 mr-3" />
                 Recordings
               </Button>
               <Button 
-                variant={selectedTab === "analytics" ? "accent" : "ghost"} 
-                className="w-full justify-start"
+                variant={selectedTab === "analytics" ? "default" : "ghost"} 
+                className={`w-full justify-start font-medium tracking-wide text-sm uppercase transition-all ${selectedTab === "analytics" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 onClick={() => setSelectedTab("analytics")}
               >
-                <BarChart3 className="h-4 w-4" />
+                <BarChart3 className="h-4 w-4 mr-3" />
                 Analytics
               </Button>
               
               {/* Leads Section */}
               <Button 
-                variant={selectedTab === "leads" ? "accent" : "ghost"} 
-                className="w-full justify-start"
+                variant={selectedTab === "leads" ? "default" : "ghost"} 
+                className={`w-full justify-start font-medium tracking-wide text-sm uppercase transition-all ${selectedTab === "leads" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 onClick={() => setSelectedTab("leads")}
               >
-                <UserPlus className="h-4 w-4" />
+                <UserPlus className="h-4 w-4 mr-3" />
                 Leads
               </Button>
               
               <Button 
                 variant="ghost" 
-                className="w-full justify-start"
+                className="w-full justify-start text-muted-foreground hover:text-foreground font-medium tracking-wide text-sm uppercase transition-all mt-6"
                 onClick={onShowProfile}
               >
-                <User className="h-4 w-4" />
+                <User className="h-4 w-4 mr-3" />
                 Profile
               </Button>
           </nav>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 p-6">
+        {/* Main Content - Spacious Layout */}
+        <main className="flex-1 p-10 bg-background">
           <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-            <TabsContent value="overview" className="space-y-6">
-              {/* KPI Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-6">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Calls</CardTitle>
-                    <Phone className="h-4 w-4 text-muted-foreground" />
+            <TabsContent value="overview" className="space-y-8">
+              {/* KPI Cards - Luxury Minimal */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card className="border border-border hover:border-accent-blue transition-all duration-300">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-xs font-semibold tracking-widest uppercase text-muted-foreground">Total Calls</CardTitle>
+                    <Phone className="h-5 w-5 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{kpiData.totalCalls}</div>
-                    <p className="text-xs text-muted-foreground">
+                    <div className="text-3xl font-bold tracking-tight">{kpiData.totalCalls}</div>
+                    <p className="text-xs text-muted-foreground mt-2">
                       Total recorded calls
                     </p>
                   </CardContent>
@@ -663,6 +675,20 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
                                 </div>
                               )}
                               {getStatusBadge(recording.status || 'unknown')}
+                              {(recording.status === 'failed' || recording.status === 'error') && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRetryRecording(recording, analysis);
+                                  }}
+                                  className="text-accent-blue hover:bg-accent-blue/10 border-accent-blue"
+                                >
+                                  <RefreshCw className="h-4 w-4 mr-1" />
+                                  Retry
+                                </Button>
+                              )}
                               <Button 
                                 variant="ghost" 
                                 size="icon"

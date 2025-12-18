@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, FileAudio } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface AddRecordingModalProps {
   open: boolean;
@@ -14,7 +15,7 @@ interface AddRecordingModalProps {
   onRecordingAdded?: () => void;
 }
 
-const WEBHOOK_URL = "https://n8nautomation.site/webhook/a2025371-8955-4ef4-8a74-0686456b3003";
+const WEBHOOK_URL = "https://n8nautomation.site/webhook/ad2aa239-7a2f-467d-a95a-a66a2ca43537";
 
 // Function to send webhook in background without blocking UI
 const sendWebhookInBackground = async (webhookPayload: any) => {
@@ -73,108 +74,36 @@ const sendWebhookInBackground = async (webhookPayload: any) => {
   }
 };
 
-// Validation functions
-const validateGoogleDriveUrl = (url: string): { isValid: boolean; error?: string } => {
-  // Check if it's a Google Drive URL
-  const driveUrlPattern = /^https:\/\/drive\.google\.com\/(file\/d\/|open\?id=)/;
+// File validation
+const validateAudioFile = (file: File): { isValid: boolean; error?: string } => {
+  const allowedTypes = [
+    'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/m4a', 
+    'audio/ogg', 'audio/webm', 'audio/flac', 'video/mp4', 'video/webm'
+  ];
   
-  if (!driveUrlPattern.test(url)) {
+  const allowedExtensions = ['.mp3', '.wav', '.m4a', '.ogg', '.webm', '.flac', '.mp4'];
+  
+  // Check file type
+  const hasValidType = allowedTypes.includes(file.type);
+  const hasValidExtension = allowedExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+  
+  if (!hasValidType && !hasValidExtension) {
     return {
       isValid: false,
-      error: "Please provide a valid Google Drive URL (must start with https://drive.google.com/)"
+      error: "Invalid file type. Please upload an audio file (MP3, WAV, M4A, OGG, WEBM, FLAC) or video file (MP4, WEBM)."
     };
   }
 
-  // Check if it's a public/shareable link (contains /file/d/ or open?id=)
-  const publicLinkPattern = /\/file\/d\/([a-zA-Z0-9_-]+)|[\?&]id=([a-zA-Z0-9_-]+)/;
-  
-  if (!publicLinkPattern.test(url)) {
+  // Check file size (max 100MB)
+  const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+  if (file.size > maxSize) {
     return {
       isValid: false,
-      error: "Please provide a public/shareable Google Drive link. Make sure the file is shared with 'Anyone with the link' access."
+      error: "File size exceeds 100MB. Please upload a smaller file."
     };
   }
 
   return { isValid: true };
-};
-
-// Function to check if Google Drive URL is publicly accessible
-const checkGoogleDriveUrlAccessibility = async (url: string): Promise<{ isAccessible: boolean; error?: string }> => {
-  try {
-    // Extract file ID from the URL
-    const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)|[\?&]id=([a-zA-Z0-9_-]+)/);
-    if (!fileIdMatch) {
-      return { isAccessible: false, error: "Could not extract file ID from URL" };
-    }
-    
-    const fileId = fileIdMatch[1] || fileIdMatch[2];
-    
-    // Convert to viewable URL format (this is more reliable for checking accessibility)
-    const viewableUrl = `https://drive.google.com/file/d/${fileId}/view`;
-    
-    console.log('🔍 Checking URL accessibility:', viewableUrl);
-    
-    // Try multiple methods to check accessibility
-    try {
-      // Method 1: Try to fetch the viewable URL
-      const response = await fetch(viewableUrl, {
-        method: 'HEAD',
-        mode: 'no-cors',
-      });
-      
-      console.log('✅ URL accessibility check completed via viewable URL');
-      return { isAccessible: true };
-      
-    } catch (viewableError) {
-      console.log('⚠️ Viewable URL check failed, trying direct download URL...');
-      
-      // Method 2: Try direct download URL
-      const directDownloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-      
-      try {
-        const downloadResponse = await fetch(directDownloadUrl, {
-          method: 'HEAD',
-          mode: 'no-cors',
-        });
-        
-        console.log('✅ URL accessibility check completed via download URL');
-        return { isAccessible: true };
-        
-      } catch (downloadError) {
-        console.log('⚠️ Download URL check also failed, but this might be due to CORS restrictions');
-        
-        // Method 3: Use a proxy service to check accessibility
-        try {
-          const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(viewableUrl)}`;
-          const proxyResponse = await fetch(proxyUrl);
-          
-          if (proxyResponse.ok) {
-            const data = await proxyResponse.json();
-            if (data.contents && !data.contents.includes('Sorry, the file you have requested does not exist')) {
-              console.log('✅ URL accessibility check completed via proxy');
-              return { isAccessible: true };
-            }
-          }
-        } catch (proxyError) {
-          console.log('⚠️ Proxy check also failed');
-        }
-        
-        // If all methods fail, assume it's accessible but warn the user
-        console.log('⚠️ All accessibility checks failed, but this might be due to CORS restrictions');
-        return { 
-          isAccessible: true, // Assume accessible but warn user
-          error: "Could not fully verify accessibility due to browser restrictions. Please ensure the file is shared with 'Anyone with the link' access." 
-        };
-      }
-    }
-    
-  } catch (error) {
-    console.error('❌ URL accessibility check failed:', error);
-    return { 
-      isAccessible: false, 
-      error: "Could not verify if the file is publicly accessible. Please ensure the file is shared with 'Anyone with the link' access." 
-    };
-  }
 };
 
 const checkUniqueFileName = async (fileName: string, userId: string): Promise<{ isUnique: boolean; error?: string }> => {
@@ -205,11 +134,37 @@ const checkUniqueFileName = async (fileName: string, userId: string): Promise<{ 
 };
 
 export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded }: AddRecordingModalProps) {
-  const [driveUrl, setDriveUrl] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validation = validateAudioFile(file);
+    if (!validation.isValid) {
+      toast({
+        title: "Invalid File",
+        description: validation.error,
+        variant: "destructive",
+      });
+      e.target.value = ''; // Reset input
+      return;
+    }
+
+    setSelectedFile(file);
+    
+    // Auto-populate file name if not already set
+    if (!fileName) {
+      const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+      setFileName(nameWithoutExt);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,48 +178,20 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
       return;
     }
     
-    if (!driveUrl.trim() || !fileName.trim()) {
+    if (!selectedFile || !fileName.trim()) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: "Please select a file and provide a name",
         variant: "destructive",
       });
       return;
     }
 
     setIsLoading(true);
+    setUploadProgress(0);
 
     try {
-      // Step 1: Validate Google Drive URL
-      const urlValidation = validateGoogleDriveUrl(driveUrl.trim());
-      if (!urlValidation.isValid) {
-        toast({
-          title: "Invalid URL",
-          description: urlValidation.error,
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Step 2: Check if URL is publicly accessible
-      toast({
-        title: "Validating URL",
-        description: "Checking if the Google Drive file is publicly accessible...",
-      });
-      
-      const accessibilityCheck = await checkGoogleDriveUrlAccessibility(driveUrl.trim());
-      if (!accessibilityCheck.isAccessible) {
-        toast({
-          title: "URL Not Accessible",
-          description: accessibilityCheck.error || "The file is not publicly accessible. Please ensure it's shared with 'Anyone with the link' access.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Step 3: Check if file name is unique
+      // Step 1: Check if file name is unique
       const uniqueCheck = await checkUniqueFileName(fileName.trim(), user.id);
       if (!uniqueCheck.isUnique) {
         toast({
@@ -276,15 +203,44 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
         return;
       }
 
-      // Step 3: Insert recording into database
+      // Step 2: Upload file to Supabase Storage
+      toast({
+        title: "Uploading File",
+        description: "Uploading your recording to secure storage...",
+      });
+
+      const fileExtension = selectedFile.name.split('.').pop();
+      const storagePath = `${user.id}/${Date.now()}_${fileName.trim()}.${fileExtension}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('recordings')
+        .upload(storagePath, selectedFile, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(`Upload error: ${uploadError.message}`);
+      }
+
+      setUploadProgress(50);
+
+      // Step 3: Get public URL (for webhook)
+      const { data: urlData } = supabase.storage
+        .from('recordings')
+        .getPublicUrl(storagePath);
+
+      const fileUrl = urlData.publicUrl;
+
+      // Step 4: Insert recording into database
       const { data: recording, error: dbError } = await supabase
         .from('recordings')
         .insert({
           user_id: user.id,
-          drive_file_id: extractFileIdFromUrl(driveUrl),
-          file_name: fileName,
-          stored_file_url: driveUrl,
-          status: 'processing'
+          file_name: fileName.trim(),
+          file_size: selectedFile.size,
+          stored_file_url: fileUrl,
+          status: 'uploaded'
         })
         .select()
         .single();
@@ -293,12 +249,15 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
         throw new Error(`Database error: ${dbError.message}`);
       }
 
-      // Step 4: Create corresponding analysis record
+      setUploadProgress(75);
+
+      // Step 5: Create corresponding analysis record
       const { data: analysis, error: analysisError } = await supabase
         .from('analyses')
         .insert({
           recording_id: recording.id,
           user_id: user.id,
+          status: 'pending',
           sentiment_score: null,
           engagement_score: null,
           confidence_score_executive: null,
@@ -315,32 +274,30 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
 
       if (analysisError) {
         console.warn('Failed to create analysis record:', analysisError);
-        // Don't throw error - continue with webhook even if analysis creation fails
       }
 
-      // Step 5: Send to webhook - Multiple attempts for reliability
+      setUploadProgress(90);
+
+      // Step 6: Send to webhook for processing
       const webhookPayload = {
-        url: driveUrl,
-        name: fileName,
         recording_id: recording.id,
         analysis_id: analysis?.id || null,
-        user_id: user.id,
-        timestamp: new Date().toISOString(),
-        source: 'voice-axis-scan-frontend',
-        url_validated: true, // Indicates URL has been validated for accessibility
-        validation_method: 'frontend_check' // How the URL was validated
+        recording_name: fileName.trim(),
+        recording_url: fileUrl
       };
 
       console.log('🚀 Sending webhook POST request to:', WEBHOOK_URL);
       console.log('📦 Webhook payload:', webhookPayload);
-      console.log('👤 User ID in payload:', webhookPayload.user_id);
 
-      // Send webhook in background - don't block modal closing
+      // Send webhook in background
       sendWebhookInBackground(webhookPayload);
 
-      // Reset form and close modal immediately after recording is saved
-      setDriveUrl("");
+      setUploadProgress(100);
+
+      // Reset form and close modal
+      setSelectedFile(null);
       setFileName("");
+      setUploadProgress(0);
       onOpenChange(false);
       
       // Trigger refresh of recordings list
@@ -350,32 +307,27 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
 
       // Show success message
       toast({
-        title: "Recording Added Successfully!",
-        description: "Your recording has been submitted for analysis. You'll be notified when it's complete.",
+        title: "Recording Uploaded Successfully!",
+        description: "Your recording has been uploaded and queued for analysis.",
       });
 
     } catch (error) {
       console.error('Error adding recording:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to add recording",
+        description: error instanceof Error ? error.message : "Failed to upload recording",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+      setUploadProgress(0);
     }
   };
 
-  const extractFileIdFromUrl = (url: string): string => {
-    // Extract file ID from Google Drive URL
-    const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    return match ? match[1] : url;
-  };
-
-
   const handleCancel = () => {
-    setDriveUrl("");
+    setSelectedFile(null);
     setFileName("");
+    setUploadProgress(0);
     onOpenChange(false);
   };
 
@@ -385,54 +337,71 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <img 
-              src="/logo.png" 
-              alt="Tasknova" 
+              src="/panchsil_logo.png.jpg" 
+              alt="Panchshil" 
               className="h-5 w-auto"
-              onError={(e) => {
-                e.currentTarget.src = "/logo2.png";
-              }}
             />
             <Upload className="h-5 w-5" />
-            Add New Recording
+            Upload New Recording
           </DialogTitle>
           <DialogDescription>
-            Add a new recording by providing the Google Drive URL and file name. The recording will be queued for analysis by <span className="font-semibold text-accent-blue">Tasknova</span> AI.
+            Upload an audio or video file directly from your device. The recording will be securely stored and queued for analysis by <span className="font-semibold text-accent-blue">Tasknova</span> AI.
           </DialogDescription>
           
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="drive-url">Google Drive URL *</Label>
-            <Input
-              id="drive-url"
-              type="url"
-              placeholder="https://drive.google.com/file/d/..."
-              value={driveUrl}
-              onChange={(e) => setDriveUrl(e.target.value)}
-              disabled={isLoading}
-              required
-            />
+            <Label htmlFor="audio-file">Audio/Video File *</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="audio-file"
+                type="file"
+                accept="audio/*,video/mp4,video/webm,.mp3,.wav,.m4a,.ogg,.webm,.flac"
+                onChange={handleFileChange}
+                disabled={isLoading}
+                required
+                className="cursor-pointer"
+              />
+              {selectedFile && (
+                <FileAudio className="h-5 w-5 text-green-600 flex-shrink-0" />
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Paste a public Google Drive link. Make sure the file is shared with "Anyone with the link" access.
+              Supported formats: MP3, WAV, M4A, OGG, WEBM, FLAC, MP4. Max size: 100MB.
             </p>
+            {selectedFile && (
+              <p className="text-xs text-green-600 font-medium">
+                Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+              </p>
+            )}
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="file-name">File Name *</Label>
+            <Label htmlFor="file-name">Recording Name *</Label>
             <Input
               id="file-name"
               type="text"
-              placeholder="e.g., sales_call_john_doe.mp3"
+              placeholder="e.g., Sales Call - John Doe"
               value={fileName}
               onChange={(e) => setFileName(e.target.value)}
               disabled={isLoading}
               required
             />
             <p className="text-xs text-muted-foreground">
-              Choose a unique name that doesn't already exist in your recordings.
+              Choose a unique, descriptive name for this recording.
             </p>
           </div>
+
+          {isLoading && uploadProgress > 0 && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Upload Progress</span>
+                <span className="font-medium">{uploadProgress}%</span>
+              </div>
+              <Progress value={uploadProgress} className="h-2" />
+            </div>
+          )}
 
           <DialogFooter>
             <Button

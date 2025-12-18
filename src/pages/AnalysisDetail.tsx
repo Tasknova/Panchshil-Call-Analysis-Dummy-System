@@ -138,12 +138,9 @@ export default function AnalysisDetail() {
               Back to Recordings
             </Button>
             <img 
-              src="/logo.png" 
-              alt="Tasknova" 
+              src="/panchsil_logo.png.jpg" 
+              alt="Panchshil" 
               className="h-8 w-auto"
-              onError={(e) => {
-                e.currentTarget.src = "/logo2.png";
-              }}
             />
             <div>
               <h1 className="text-2xl font-bold text-foreground">Call Analysis Details</h1>
