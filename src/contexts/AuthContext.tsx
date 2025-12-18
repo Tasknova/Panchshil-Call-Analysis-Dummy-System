@@ -27,10 +27,10 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  // Mock user for bypassing authentication
+  // Mock user for bypassing authentication - using real user ID from database
   const mockUser: User = {
-    id: 'demo-user-id',
-    email: 'demo@tasknova.com',
+    id: '9635b742-1d28-43a5-9f95-0cde26cdb913',
+    email: 'rajpalrathore4455@gmail.com',
     created_at: new Date().toISOString(),
     app_metadata: {},
     user_metadata: {},

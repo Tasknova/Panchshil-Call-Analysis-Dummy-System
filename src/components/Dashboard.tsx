@@ -208,6 +208,15 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
       });
 
       if (response.ok) {
+        // Update analysis status to processing
+        const { supabase } = await import('@/lib/supabase');
+        if (analysis?.id) {
+          await supabase
+            .from('analyses')
+            .update({ status: 'processing' })
+            .eq('id', analysis.id);
+        }
+
         toast({
           title: "Retry Successful",
           description: "Your recording has been queued for reprocessing.",
