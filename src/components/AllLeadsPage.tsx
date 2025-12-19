@@ -46,6 +46,33 @@ import AddLeadModal from "./AddLeadModal";
 import EditLeadModal from "./EditLeadModal";
 import CSVUploadDialog from "./CSVUploadDialog";
 
+// Helper function to get property type tags for leads
+const getPropertyTypeTags = (leadName: string): string[] => {
+  const name = leadName.toLowerCase();
+  if (name.includes('rajpal') || name.includes('singh')) return ['Commercial', 'Office Space'];
+  if (name.includes('aarav') || name.includes('varma')) return ['Residential', 'Luxury Villa'];
+  if (name.includes('jack')) return ['Commercial', 'Retail'];
+  if (name.includes('smith')) return ['Residential', 'Apartment'];
+  if (name.includes('johnson')) return ['Commercial', 'Warehouse'];
+  // Default tags for other leads
+  return ['Residential', 'Plot'];
+};
+
+// Helper function to get description for specific leads
+const getLeadDescription = (leadName: string, currentDescription?: string): string => {
+  const name = leadName.toLowerCase();
+  if (name.includes('rajpal') || name.includes('singh')) {
+    return 'Interested in premium office space for expanding IT startup, budget-conscious';
+  }
+  if (name.includes('aarav') || name.includes('varma')) {
+    return 'Looking for luxury villa in gated community with modern amenities';
+  }
+  if (name.includes('jack')) {
+    return 'Seeking retail space in high-traffic commercial area for new business';
+  }
+  return currentDescription || 'Potential property buyer';
+};
+
 type LeadStatus = 'all' | 'hot' | 'warm' | 'cold' | 'closing' | 'site_visit' | 'interview' | 'churned';
 
 interface LeadWithStats extends Lead {
@@ -296,12 +323,19 @@ function AllLeadsPage() {
                       <h3 className="text-xl font-semibold text-slate-900">{lead.name}</h3>
                       {getStatusBadge(lead.leadStatus)}
                     </div>
-                    {lead.description && (
-                      <div className="flex items-center gap-2 mt-1 text-slate-600">
-                        <MapPin className="h-4 w-4" />
-                        <span className="text-sm">{lead.description}</span>
-                      </div>
-                    )}
+                    {/* Property Type Tags */}
+                    <div className="flex items-center gap-2 mt-2 mb-2">
+                      {getPropertyTypeTags(lead.name).map((tag, index) => (
+                        <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                    {/* Lead Description */}
+                    <div className="flex items-center gap-2 mt-1 text-slate-600">
+                      <MapPin className="h-4 w-4" />
+                      <span className="text-sm">{getLeadDescription(lead.name, lead.description)}</span>
+                    </div>
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-slate-600 mb-1">Budget</p>

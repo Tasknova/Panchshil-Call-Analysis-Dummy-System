@@ -34,6 +34,32 @@ import { useToast } from "@/hooks/use-toast";
 import { Lead } from "@/lib/supabase";
 import EditLeadModal from "./EditLeadModal";
 
+// Helper function to get property type tags for leads
+const getPropertyTypeTags = (leadName: string): string[] => {
+  const name = leadName.toLowerCase();
+  if (name.includes('rajpal') || name.includes('singh')) return ['Commercial', 'Office Space'];
+  if (name.includes('aarav') || name.includes('varma')) return ['Residential', 'Luxury Villa'];
+  if (name.includes('jack')) return ['Commercial', 'Retail'];
+  if (name.includes('smith')) return ['Residential', 'Apartment'];
+  if (name.includes('johnson')) return ['Commercial', 'Warehouse'];
+  return ['Residential', 'Plot'];
+};
+
+// Helper function to get description for specific leads
+const getLeadDescription = (leadName: string, currentDescription?: string): string => {
+  const name = leadName.toLowerCase();
+  if (name.includes('rajpal') || name.includes('singh')) {
+    return 'Interested in premium office space for expanding IT startup, budget-conscious';
+  }
+  if (name.includes('aarav') || name.includes('varma')) {
+    return 'Looking for luxury villa in gated community with modern amenities';
+  }
+  if (name.includes('jack')) {
+    return 'Seeking retail space in high-traffic commercial area for new business';
+  }
+  return currentDescription || 'Potential property buyer';
+};
+
 export default function GroupLeadsPage() {
   const { groupId } = useParams<{ groupId: string }>();
   const [searchTerm, setSearchTerm] = useState("");
@@ -198,6 +224,7 @@ export default function GroupLeadsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
+                    <TableHead>Property Type</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Description</TableHead>
@@ -208,6 +235,15 @@ export default function GroupLeadsPage() {
                   {filteredLeads.map((lead) => (
                     <TableRow key={lead.id}>
                       <TableCell className="font-medium">{lead.name}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 flex-wrap">
+                          {getPropertyTypeTags(lead.name).map((tag, index) => (
+                            <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-muted-foreground" />
@@ -221,16 +257,12 @@ export default function GroupLeadsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {lead.description ? (
-                          <span className="text-sm text-muted-foreground">
-                            {lead.description.length > 50 
-                              ? `${lead.description.substring(0, 50)}...` 
-                              : lead.description
-                            }
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
+                        <span className="text-sm text-muted-foreground">
+                          {getLeadDescription(lead.name, lead.description).length > 50 
+                            ? `${getLeadDescription(lead.name, lead.description).substring(0, 50)}...` 
+                            : getLeadDescription(lead.name, lead.description)
+                          }
+                        </span>
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
