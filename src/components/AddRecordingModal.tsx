@@ -3,10 +3,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { Loader2, Upload, FileAudio } from "lucide-react";
+import { Loader2, Upload, FileAudio, FileText } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface AddRecordingModalProps {
@@ -134,8 +136,10 @@ const checkUniqueFileName = async (fileName: string, userId: string): Promise<{ 
 };
 
 export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded }: AddRecordingModalProps) {
+  const [inputMode, setInputMode] = useState<"audio" | "transcript">("audio");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
+  const [transcript, setTranscript] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
@@ -178,13 +182,25 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
       return;
     }
     
-    if (!selectedFile || !fileName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please select a file and provide a name",
-        variant: "destructive",
-      });
-      return;
+    // Validate based on input mode
+    if (inputMode === "audio") {
+      if (!selectedFile || !fileName.trim()) {
+        toast({
+          title: "Error",
+          description: "Please select a file and provide a name",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      if (!transcript.trim() || !fileName.trim()) {
+        toast({
+          title: "Error",
+          description: "Please provide both a transcript and a recording name",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -203,43 +219,52 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
         return;
       }
 
-      // Step 2: Upload file to Supabase Storage
-      toast({
-        title: "Uploading File",
-        description: "Uploading your recording to secure storage...",
-      });
+      let fileUrl: string | null = null;
+      let fileSize: number | null = null;
 
-      const fileExtension = selectedFile.name.split('.').pop();
-      const storagePath = `${user.id}/${Date.now()}_${fileName.trim()}.${fileExtension}`;
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('recordings')
-        .upload(storagePath, selectedFile, {
-          cacheControl: '3600',
-          upsert: false,
+      // Step 2: Upload file to Supabase Storage (only if audio mode)
+      if (inputMode === "audio" && selectedFile) {
+        toast({
+          title: "Uploading File",
+          description: "Uploading your recording to secure storage...",
         });
 
-      if (uploadError) {
-        throw new Error(`Upload error: ${uploadError.message}`);
+        const fileExtension = selectedFile.name.split('.').pop();
+        const storagePath = `${user.id}/${Date.now()}_${fileName.trim()}.${fileExtension}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('recordings')
+          .upload(storagePath, selectedFile, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw new Error(`Upload error: ${uploadError.message}`);
+        }
+
+        setUploadProgress(50);
+
+        // Get public URL (for webhook)
+        const { data: urlData } = supabase.storage
+          .from('recordings')
+          .getPublicUrl(storagePath);
+
+        fileUrl = urlData.publicUrl;
+        fileSize = selectedFile.size;
+      } else {
+        setUploadProgress(50);
       }
 
-      setUploadProgress(50);
-
-      // Step 3: Get public URL (for webhook)
-      const { data: urlData } = supabase.storage
-        .from('recordings')
-        .getPublicUrl(storagePath);
-
-      const fileUrl = urlData.publicUrl;
-
-      // Step 4: Insert recording into database
+      // Step 3: Insert recording into database
       const { data: recording, error: dbError } = await supabase
         .from('recordings')
         .insert({
           user_id: user.id,
           file_name: fileName.trim(),
-          file_size: selectedFile.size,
+          file_size: fileSize,
           stored_file_url: fileUrl,
+          transcript: inputMode === "transcript" ? transcript.trim() : null,
           status: 'uploaded'
         })
         .select()
@@ -251,7 +276,7 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
 
       setUploadProgress(75);
 
-      // Step 5: Create corresponding analysis record
+      // Step 4: Create corresponding analysis record
       const { data: analysis, error: analysisError } = await supabase
         .from('analyses')
         .insert({
@@ -278,12 +303,13 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
 
       setUploadProgress(90);
 
-      // Step 6: Send to webhook for processing
+      // Step 5: Send to webhook for processing
       const webhookPayload = {
         recording_id: recording.id,
         analysis_id: analysis?.id || null,
         recording_name: fileName.trim(),
-        recording_url: fileUrl
+        recording_url: fileUrl,
+        transcript: inputMode === "transcript" ? transcript.trim() : null
       };
 
       console.log('🚀 Sending webhook POST request to:', WEBHOOK_URL);
@@ -297,6 +323,7 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
       // Reset form and close modal
       setSelectedFile(null);
       setFileName("");
+      setTranscript("");
       setUploadProgress(0);
       onOpenChange(false);
       
@@ -307,15 +334,17 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
 
       // Show success message
       toast({
-        title: "Recording Uploaded Successfully!",
-        description: "Your recording has been uploaded and queued for analysis.",
+        title: inputMode === "audio" ? "Recording Uploaded Successfully!" : "Transcript Added Successfully!",
+        description: inputMode === "audio" 
+          ? "Your recording has been uploaded and queued for analysis."
+          : "Your transcript has been saved and queued for analysis.",
       });
 
     } catch (error) {
       console.error('Error adding recording:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to upload recording",
+        description: error instanceof Error ? error.message : "Failed to add recording",
         variant: "destructive",
       });
     } finally {
@@ -327,13 +356,14 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
   const handleCancel = () => {
     setSelectedFile(null);
     setFileName("");
+    setTranscript("");
     setUploadProgress(0);
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <img 
@@ -342,40 +372,72 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
               className="h-5 w-auto"
             />
             <Upload className="h-5 w-5" />
-            Upload New Recording
+            Add New Recording
           </DialogTitle>
           <DialogDescription>
-            Upload an audio or video file directly from your device. The recording will be securely stored and queued for analysis by <span className="font-semibold text-accent-blue">Tasknova</span> AI.
+            Upload an audio/video file or paste a transcript for analysis by <span className="font-semibold text-accent-blue">Tasknova</span> AI.
           </DialogDescription>
-          
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="audio-file">Audio/Video File *</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                id="audio-file"
-                type="file"
-                accept="audio/*,video/mp4,video/webm,.mp3,.wav,.m4a,.ogg,.webm,.flac"
-                onChange={handleFileChange}
-                disabled={isLoading}
-                required
-                className="cursor-pointer"
-              />
-              {selectedFile && (
-                <FileAudio className="h-5 w-5 text-green-600 flex-shrink-0" />
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Supported formats: MP3, WAV, M4A, OGG, WEBM, FLAC, MP4. Max size: 100MB.
-            </p>
-            {selectedFile && (
-              <p className="text-xs text-green-600 font-medium">
-                Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-              </p>
-            )}
-          </div>
+          <Tabs value={inputMode} onValueChange={(value) => setInputMode(value as "audio" | "transcript")} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="audio" className="flex items-center gap-2">
+                <FileAudio className="h-4 w-4" />
+                Upload Audio
+              </TabsTrigger>
+              <TabsTrigger value="transcript" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Paste Transcript
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="audio" className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="audio-file">Audio/Video File *</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="audio-file"
+                    type="file"
+                    accept="audio/*,video/mp4,video/webm,.mp3,.wav,.m4a,.ogg,.webm,.flac"
+                    onChange={handleFileChange}
+                    disabled={isLoading}
+                    required={inputMode === "audio"}
+                    className="cursor-pointer"
+                  />
+                  {selectedFile && (
+                    <FileAudio className="h-5 w-5 text-green-600 flex-shrink-0" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Supported formats: MP3, WAV, M4A, OGG, WEBM, FLAC, MP4. Max size: 100MB.
+                </p>
+                {selectedFile && (
+                  <p className="text-xs text-green-600 font-medium">
+                    Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="transcript" className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="transcript">Transcript *</Label>
+                <Textarea
+                  id="transcript"
+                  placeholder="Paste your call transcript here..."
+                  value={transcript}
+                  onChange={(e) => setTranscript(e.target.value)}
+                  disabled={isLoading}
+                  required={inputMode === "transcript"}
+                  className="min-h-[200px] resize-y"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Paste the complete transcript of your call for AI analysis.
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
           
           <div className="space-y-2">
             <Label htmlFor="file-name">Recording Name *</Label>
@@ -396,7 +458,7 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
           {isLoading && uploadProgress > 0 && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Upload Progress</span>
+                <span className="text-muted-foreground">Progress</span>
                 <span className="font-medium">{uploadProgress}%</span>
               </div>
               <Progress value={uploadProgress} className="h-2" />
