@@ -565,9 +565,9 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
                             return item ? `${item.callName} (${item.date})` : label;
                           }}
                         />
-                        <Legend />
-                        <Bar dataKey="executive" fill="hsl(var(--accent-blue))" name="Executive" radius={[2, 2, 0, 0]} />
-                        <Bar dataKey="person" fill="hsl(var(--success))" name="Person" radius={[2, 2, 0, 0]} />
+                        <Legend formatter={(value) => value === 'executive' ? 'Executive Confidence' : 'Person Confidence'} />
+                        <Bar dataKey="executive" fill="hsl(var(--accent-blue))" name="executive" radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="person" fill="hsl(var(--success))" name="person" radius={[2, 2, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>

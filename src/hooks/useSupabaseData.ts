@@ -101,7 +101,12 @@ export function useAnalyses() {
           recordings (
             file_name,
             duration_seconds,
-            created_at
+            created_at,
+            lead_id,
+            leads (
+              id,
+              name
+            )
           )
         `)
         .order('created_at', { ascending: false })
@@ -274,7 +279,7 @@ export function useDashboardStats() {
           date: new Date(analysis.created_at).toLocaleDateString(),
           duration: analysis.recordings?.duration_seconds ? 
             `${Math.floor(analysis.recordings.duration_seconds / 60)}:${(analysis.recordings.duration_seconds % 60).toString().padStart(2, '0')}` : 
-            'N/A',
+            (analysis.recordings?.leads?.name || 'N/A'),
           sentiment: analysis.sentiments_score || 0,
           engagement: analysis.engagement_score || 0,
           confidenceExecutive: analysis.confidence_score_executive || 0,

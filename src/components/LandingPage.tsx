@@ -64,16 +64,6 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 onClick={() => window.location.href = '/'}
               />
             </div>
-            
-            <div className="flex items-center space-x-6">
-              <Button 
-                variant="ghost" 
-                onClick={onGetStarted}
-                className="text-foreground hover:text-accent-blue font-medium tracking-wide"
-              >
-                ENTER
-              </Button>
-            </div>
           </div>
         </div>
       </nav>

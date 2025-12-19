@@ -29,6 +29,11 @@ export default function AnalysisDetail() {
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
 
+  // Helper function to clean markdown formatting from text
+  const cleanMarkdown = (text: string) => {
+    return text.replace(/\*\*/g, '').trim();
+  };
+
   useEffect(() => {
     const fetchAnalysisAndRecording = async () => {
       if (!id || !user) return;
@@ -724,12 +729,12 @@ export default function AnalysisDetail() {
                           <div className="flex-shrink-0 w-7 h-7 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm">
                             {index + 1}
                           </div>
-                          <p className="text-slate-700 leading-relaxed flex-1 pt-1">{objection.trim()}</p>
+                          <p className="text-slate-700 leading-relaxed flex-1 pt-1">{objection.trim().replace(/\*\*/g, '')}</p>
                         </div>
                       ))
                     ) : (
                       <p className="text-slate-600">
-                        {analysis.objections_handeled || 'No objections recorded'}
+                        {analysis.objections_handeled ? analysis.objections_handeled.replace(/\*\*/g, '') : 'No objections recorded'}
                       </p>
                     )}
                   </div>
@@ -748,8 +753,8 @@ export default function AnalysisDetail() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <p className="text-slate-700 leading-relaxed">
-                      {analysis.objections_handling_details}
+                    <p className="text-slate-700 leading-relaxed whitespace-pre-line">
+                      {analysis.objections_handling_details.replace(/\*\*/g, '')}
                     </p>
                   </CardContent>
                 </Card>

@@ -326,54 +326,115 @@ export default function LeadDetail() {
 
                     {/* Analysis Metrics */}
                     {analysis && analysis.status?.toLowerCase() === 'completed' && (
-                      <div className="grid grid-cols-4 gap-4 pt-4 border-t border-slate-200">
-                        {analysis.sentiments_score !== null && analysis.sentiments_score !== undefined && (
-                          <div className="text-center">
-                            <p className="text-xs text-slate-600 mb-1">Sentiment</p>
-                            <p className={`text-xl font-semibold ${getSentimentColor(analysis.sentiments_score)}`}>
-                              {analysis.sentiments_score}%
-                            </p>
-                          </div>
-                        )}
-                        {analysis.engagement_score !== null && analysis.engagement_score !== undefined && (
-                          <div className="text-center">
-                            <p className="text-xs text-slate-600 mb-1">Engagement</p>
-                            <p className={`text-xl font-semibold ${getSentimentColor(analysis.engagement_score)}`}>
-                              {analysis.engagement_score}%
-                            </p>
-                          </div>
-                        )}
-                        {analysis.confidence_score_executive !== null && analysis.confidence_score_executive !== undefined && (
-                          <div className="text-center">
-                            <p className="text-xs text-slate-600 mb-1">Confidence</p>
-                            <p className="text-xl font-semibold text-blue-600">
-                              {analysis.confidence_score_executive}/10
-                            </p>
-                          </div>
-                        )}
-                        {analysis.lead_type && (
-                          <div className="text-center">
-                            <p className="text-xs text-slate-600 mb-1">Lead Type</p>
-                            <p className="text-sm font-medium text-slate-900">
-                              {analysis.lead_type}
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                      <>
+                        <div className="grid grid-cols-4 gap-4 pt-4 border-t border-slate-200">
+                          {analysis.sentiments_score !== null && analysis.sentiments_score !== undefined && (
+                            <div className="text-center">
+                              <p className="text-xs text-slate-600 mb-1">Sentiment</p>
+                              <p className={`text-xl font-semibold ${getSentimentColor(analysis.sentiments_score)}`}>
+                                {analysis.sentiments_score}%
+                              </p>
+                            </div>
+                          )}
+                          {analysis.engagement_score !== null && analysis.engagement_score !== undefined && (
+                            <div className="text-center">
+                              <p className="text-xs text-slate-600 mb-1">Engagement</p>
+                              <p className={`text-xl font-semibold ${getSentimentColor(analysis.engagement_score)}`}>
+                                {analysis.engagement_score}%
+                              </p>
+                            </div>
+                          )}
+                          {analysis.confidence_score_executive !== null && analysis.confidence_score_executive !== undefined && (
+                            <div className="text-center">
+                              <p className="text-xs text-slate-600 mb-1">Confidence</p>
+                              <p className="text-xl font-semibold text-blue-600">
+                                {analysis.confidence_score_executive}/10
+                              </p>
+                            </div>
+                          )}
+                          {analysis.lead_type && (
+                            <div className="text-center">
+                              <p className="text-xs text-slate-600 mb-1">Lead Type</p>
+                              <p className="text-sm font-medium text-slate-900">
+                                {analysis.lead_type}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Additional Details Section */}
+                        <div className="space-y-4 pt-4 mt-4 border-t border-slate-200">
+                          {/* Call Summary */}
+                          {analysis.short_summary && (
+                            <div className="bg-slate-50 p-4 rounded-lg">
+                              <div className="flex items-start gap-2 mb-2">
+                                <MessageSquare className="h-4 w-4 text-slate-600 mt-0.5 flex-shrink-0" />
+                                <h5 className="text-sm font-semibold text-slate-900">Call Summary</h5>
+                              </div>
+                              <p className="text-sm text-slate-700 leading-relaxed ml-6">
+                                {analysis.short_summary}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Recommended Next Steps */}
+                          {analysis.next_steps && analysis.next_steps !== 'TBD' && (
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                              <div className="flex items-start gap-2 mb-2">
+                                <ArrowLeft className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0 rotate-180" />
+                                <h5 className="text-sm font-semibold text-blue-900">Recommended Next Steps</h5>
+                              </div>
+                              <p className="text-sm text-blue-800 leading-relaxed ml-6">
+                                {analysis.next_steps}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Call Outcome */}
+                          {analysis.call_outcome && (
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2 flex-1">
+                                <Activity className="h-4 w-4 text-emerald-600" />
+                                <span className="text-sm font-medium text-slate-700">Call Outcome:</span>
+                                <span className="text-sm text-slate-900 font-semibold">{analysis.call_outcome}</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Objections Info */}
+                          {(analysis.no_of_objections_detected !== undefined && analysis.no_of_objections_detected !== null) && (
+                            <div className="flex items-center gap-6 text-sm">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-rose-500 rounded-full"></div>
+                                <span className="text-slate-600">Objections Detected:</span>
+                                <span className="font-semibold text-slate-900">{analysis.no_of_objections_detected}</span>
+                              </div>
+                              {(analysis.no_of_objections_handeled !== undefined && analysis.no_of_objections_handeled !== null) && (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                                  <span className="text-slate-600">Handled:</span>
+                                  <span className="font-semibold text-slate-900">{analysis.no_of_objections_handeled}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </>
                     )}
 
                     {/* View Details Button */}
                     {analysis && analysis.status?.toLowerCase() === 'completed' && (
-                      <div className="mt-4 pt-4 border-t border-slate-200">
+                      <div className="mt-4 pt-4 border-t border-slate-200 flex justify-end">
                         <Button 
                           variant="default"
-                          className="w-full bg-amber-500 hover:bg-amber-600"
+                          size="sm"
+                          className="bg-amber-500 hover:bg-amber-600"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/analysis/${analysis.id}?from=lead&leadId=${id}`);
                           }}
                         >
-                          <ExternalLink className="h-4 w-4 mr-2" />
+                          <ExternalLink className="h-3 w-3 mr-2" />
                           View Full Analysis
                         </Button>
                       </div>
