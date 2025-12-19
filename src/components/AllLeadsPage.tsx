@@ -1,17 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -36,34 +29,123 @@ import {
   Mail, 
   Phone, 
   User,
-  FolderOpen,
+  MapPin,
   Upload,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Bell,
+  Calendar,
+  TrendingUp,
+  PhoneCall,
+  ExternalLink
 } from "lucide-react";
 import { useLeads, useDeleteLead } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
-import { Lead } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { Lead, Recording, Analysis, supabase } from "@/lib/supabase";
 import AddLeadModal from "./AddLeadModal";
 import EditLeadModal from "./EditLeadModal";
 import CSVUploadDialog from "./CSVUploadDialog";
 
+type LeadStatus = 'all' | 'hot' | 'warm' | 'cold' | 'closing' | 'site_visit' | 'interview' | 'churned';
+
+interface LeadWithStats extends Lead {
+  callsMade?: number;
+  lastCallQuality?: number;
+  nextAction?: string;
+  nextActionTime?: string;
+  leadStatus?: string;
+}
+
 function AllLeadsPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilter, setActiveFilter] = useState<LeadStatus>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCsvUploadOpen, setIsCsvUploadOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [deletingLead, setDeletingLead] = useState<Lead | null>(null);
+  const [leadsWithStats, setLeadsWithStats] = useState<LeadWithStats[]>([]);
   
   const { data: leads, isLoading, error } = useLeads();
   const deleteLead = useDeleteLead();
   const { toast } = useToast();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  const filteredLeads = leads?.filter(lead => 
-    lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.contact.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  // Fetch lead statistics
+  useEffect(() => {
+    const fetchLeadStats = async () => {
+      if (!leads || !user) return;
+
+      const enrichedLeads = await Promise.all(
+        leads.map(async (lead) => {
+          // Fetch recordings for this lead
+          const { data: recordings } = await supabase
+            .from('recordings')
+            .select('id, created_at')
+            .eq('lead_id', lead.id)
+            .order('created_at', { ascending: false });
+
+          const callsMade = recordings?.length || 0;
+
+          // Fetch latest analysis for last call quality
+          let lastCallQuality = null;
+          let leadStatus = null;
+          if (recordings && recordings.length > 0) {
+            const { data: analyses } = await supabase
+              .from('analyses')
+              .select('sentiments_score, lead_type')
+              .eq('recording_id', recordings[0].id)
+              .single();
+            
+            if (analyses) {
+              lastCallQuality = analyses.sentiments_score;
+              leadStatus = analyses.lead_type;
+            }
+          }
+
+          return {
+            ...lead,
+            callsMade,
+            lastCallQuality,
+            leadStatus,
+            nextAction: 'Follow up call',
+            nextActionTime: 'Tomorrow, 10:00 AM'
+          } as LeadWithStats;
+        })
+      );
+
+      setLeadsWithStats(enrichedLeads);
+    };
+
+    fetchLeadStats();
+  }, [leads, user]);
+
+  // Filter leads by search and status
+  const filteredLeads = leadsWithStats.filter(lead => {
+    const matchesSearch = 
+      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.contact.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    if (activeFilter === 'all') return true;
+    
+    const leadType = (lead.leadStatus || '').toLowerCase();
+    return leadType.includes(activeFilter);
+  });
+
+  // Count leads by status
+  const statusCounts = {
+    all: leadsWithStats.length,
+    hot: leadsWithStats.filter(l => (l.leadStatus || '').toLowerCase().includes('hot')).length,
+    warm: leadsWithStats.filter(l => (l.leadStatus || '').toLowerCase().includes('warm')).length,
+    cold: leadsWithStats.filter(l => (l.leadStatus || '').toLowerCase().includes('cold')).length,
+    closing: leadsWithStats.filter(l => (l.leadStatus || '').toLowerCase().includes('closing')).length,
+    site_visit: 0, // Can be enhanced with additional data
+    interview: 0,  // Can be enhanced with additional data
+    churned: 0     // Can be enhanced with additional data
+  };
 
   const handleDeleteLead = async (lead: Lead) => {
     try {
@@ -101,17 +183,75 @@ function AllLeadsPage() {
     );
   }
 
+  const getStatusBadge = (leadStatus?: string) => {
+    if (!leadStatus) return null;
+    const status = leadStatus.toLowerCase();
+    if (status.includes('hot')) return <Badge className="bg-rose-500 text-white">Hot Lead</Badge>;
+    if (status.includes('warm')) return <Badge className="bg-amber-500 text-white">Warm Lead</Badge>;
+    if (status.includes('cold')) return <Badge className="bg-blue-500 text-white">Cold Lead</Badge>;
+    return null;
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 pb-8">
+      {/* Header with Welcome Message */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">All Leads</h1>
-          <p className="text-muted-foreground">
-            Manage and organize your leads
-          </p>
+          <h1 className="text-2xl font-semibold text-slate-900">Welcome back, {user?.email?.split('@')[0] || 'User'}</h1>
+          <p className="text-sm text-slate-600 mt-1">Sales Agent</p>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="icon" className="rounded-full">
+            <Bell className="h-4 w-4" />
+          </Button>
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg">
+            <User className="h-5 w-5 text-slate-600" />
+            <div>
+              <p className="text-sm font-medium text-slate-900">{user?.email?.split('@')[0] || 'User'}</p>
+              <p className="text-xs text-slate-600">Sales Agent</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Status Filter Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2">
+        <Button 
+          variant={activeFilter === 'all' ? 'default' : 'outline'}
+          onClick={() => setActiveFilter('all')}
+          className="rounded-full"
+        >
+          All ({statusCounts.all})
+        </Button>
+        <Button 
+          variant={activeFilter === 'hot' ? 'default' : 'outline'}
+          onClick={() => setActiveFilter('hot')}
+          className="rounded-full"
+        >
+          Hot ({statusCounts.hot})
+        </Button>
+        <Button 
+          variant={activeFilter === 'warm' ? 'default' : 'outline'}
+          onClick={() => setActiveFilter('warm')}
+          className="rounded-full"
+        >
+          Warm ({statusCounts.warm})
+        </Button>
+        <Button 
+          variant={activeFilter === 'cold' ? 'default' : 'outline'}
+          onClick={() => setActiveFilter('cold')}
+          className="rounded-full"
+        >
+          Cold ({statusCounts.cold})
+        </Button>
+        <Button 
+          variant={activeFilter === 'closing' ? 'default' : 'outline'}
+          onClick={() => setActiveFilter('closing')}
+          className="rounded-full"
+        >
+          Closing ({statusCounts.closing})
+        </Button>
+        <div className="ml-auto flex gap-2">
           <Button variant="outline" onClick={() => setIsCsvUploadOpen(true)}>
             <FileSpreadsheet className="h-4 w-4 mr-2" />
             Upload CSV
@@ -123,171 +263,155 @@ function AllLeadsPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Leads Cards */}
+      {filteredLeads.length === 0 ? (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Leads</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{leads?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              All leads in your database
+          <CardContent className="text-center py-12">
+            <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No leads found</h3>
+            <p className="text-muted-foreground mb-4">
+              {searchTerm ? "No leads match your search criteria." : "Get started by adding your first lead."}
             </p>
+            {!searchTerm && (
+              <Button onClick={() => setIsAddModalOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Lead
+              </Button>
+            )}
           </CardContent>
         </Card>
+      ) : (
+        <div className="space-y-4">
+          {filteredLeads.map((lead) => (
+            <Card 
+              key={lead.id} 
+              className="hover:shadow-md transition-shadow duration-200 cursor-pointer"
+              onClick={() => navigate(`/lead/${lead.id}`)}
+            >
+              <CardContent className="p-6">
+                {/* Lead Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-xl font-semibold text-slate-900">{lead.name}</h3>
+                      {getStatusBadge(lead.leadStatus)}
+                    </div>
+                    {lead.description && (
+                      <div className="flex items-center gap-2 mt-1 text-slate-600">
+                        <MapPin className="h-4 w-4" />
+                        <span className="text-sm">{lead.description}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-600 mb-1">Budget</p>
+                    <p className="text-lg font-semibold text-amber-600">Contact for info</p>
+                  </div>
+                </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Grouped Leads</CardTitle>
-            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {leads?.filter(lead => lead.group_id).length || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Leads assigned to groups
-            </p>
-          </CardContent>
-        </Card>
+                {/* Stats Row */}
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-100 rounded-lg">
+                      <PhoneCall className="h-5 w-5 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-600">Calls Made</p>
+                      <p className="text-lg font-semibold text-slate-900">{lead.callsMade || 0}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 rounded-lg">
+                      <TrendingUp className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-600">Last Call Quality</p>
+                      <p className="text-lg font-semibold text-emerald-600">
+                        {lead.lastCallQuality ? `${(lead.lastCallQuality / 10).toFixed(1)}/10` : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Calendar className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-600">Next Action</p>
+                      <p className="text-sm font-medium text-blue-600">{lead.nextActionTime || 'TBD'}</p>
+                    </div>
+                  </div>
+                </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ungrouped Leads</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {leads?.filter(lead => !lead.group_id).length || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Leads without groups
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+                {/* Contact Details */}
+                <div className="grid grid-cols-2 gap-4 mb-4 py-3 border-t border-b border-slate-200">
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <Phone className="h-4 w-4" />
+                    <span>{lead.contact}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <Mail className="h-4 w-4" />
+                    <span>{lead.email}</span>
+                  </div>
+                </div>
 
-      {/* Search and Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Leads</CardTitle>
-          <CardDescription>
-            Search and manage your leads
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search leads by name, email, or contact..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-          </div>
+                {/* Next Action Plan */}
+                {lead.nextAction && (
+                  <div className="bg-amber-50 rounded-lg p-3 mb-4">
+                    <p className="text-xs font-semibold text-amber-900 mb-1">Next Action Plan</p>
+                    <p className="text-sm text-amber-800">{lead.nextAction}</p>
+                  </div>
+                )}
 
-          {filteredLeads.length === 0 ? (
-            <div className="text-center py-8">
-              <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No leads found</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm ? "No leads match your search criteria." : "Get started by adding your first lead."}
-              </p>
-              {!searchTerm && (
-                <Button onClick={() => setIsAddModalOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Your First Lead
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Group</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="w-[50px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredLeads.map((lead) => (
-                    <TableRow 
-                      key={lead.id} 
-                      className="cursor-pointer hover:bg-slate-50"
-                      onClick={() => navigate(`/lead/${lead.id}`)}
-                    >
-                      <TableCell className="font-medium">{lead.name}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          {lead.email}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          {lead.contact}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {lead.lead_groups ? (
-                          <Badge variant="secondary">
-                            {lead.lead_groups.group_name}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">No group</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {lead.description ? (
-                          <span className="text-sm text-muted-foreground">
-                            {lead.description.length > 50 
-                              ? `${lead.description.substring(0, 50)}...` 
-                              : lead.description
-                            }
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setEditingLead(lead)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => setDeletingLead(lead)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                {/* Action Buttons */}
+                <div className="grid grid-cols-3 gap-3" onClick={(e) => e.stopPropagation()}>
+                  <Button 
+                    variant="default"
+                    className="w-full bg-amber-500 hover:bg-amber-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/lead/${lead.id}`);
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View Details
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.location.href = `tel:${lead.contact}`;
+                    }}
+                  >
+                    <PhoneCall className="h-4 w-4 mr-2" />
+                    Call Now
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full">
+                        Update Status
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditingLead(lead)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Lead
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setDeletingLead(lead)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Lead
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Add Lead Modal */}
       <AddLeadModal 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase, Lead, Recording, Analysis } from "@/lib/supabase";
-import { ArrowLeft, User, Mail, Phone, FileText, Play, Clock, Activity, TrendingUp, Loader2 } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, FileText, Play, Clock, Activity, TrendingUp, Loader2, Calendar, PhoneCall, MessageSquare, ExternalLink, MapPin, Bell } from "lucide-react";
 
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
@@ -116,165 +116,274 @@ export default function LeadDetail() {
     );
   }
 
+  const getLeadStatusBadge = (recordings: (Recording & { analyses?: Analysis })[]) => {
+    if (recordings.length === 0) return null;
+    const latestAnalysis = recordings[0]?.analyses;
+    if (!latestAnalysis?.lead_type) return null;
+    
+    const status = latestAnalysis.lead_type.toLowerCase();
+    if (status.includes('hot')) return <Badge className="bg-rose-500 text-white">Hot Lead</Badge>;
+    if (status.includes('warm')) return <Badge className="bg-amber-500 text-white">Warm Lead</Badge>;
+    if (status.includes('cold')) return <Badge className="bg-blue-500 text-white">Cold Lead</Badge>;
+    return null;
+  };
+
+  // Calculate stats
+  const totalCalls = recordings.length;
+  const avgSentiment = recordings.length > 0 
+    ? recordings.reduce((sum, r) => sum + (r.analyses?.sentiments_score || 0), 0) / recordings.length 
+    : 0;
+  const completedCalls = recordings.filter(r => r.analyses?.status?.toLowerCase() === 'completed').length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/?view=dashboard&tab=leads')}
-                className="border-slate-300 hover:bg-slate-50"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Leads
-              </Button>
-              <div className="h-8 w-px bg-slate-300" />
-              <img 
-                src="/panchsil_logo.png.jpg" 
-                alt="Panchshil" 
-                className="h-10 w-auto"
-              />
+      <header className="border-b border-border bg-card px-8 py-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-6">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/?view=dashboard&tab=leads')}
+              className="border-slate-300 hover:bg-slate-50"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Leads
+            </Button>
+            <div className="border-l border-border pl-6">
+              <h1 className="text-xl font-semibold text-foreground tracking-wide">Lead Details</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="icon" className="rounded-full">
+              <Bell className="h-4 w-4" />
+            </Button>
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg">
+              <User className="h-5 w-5 text-slate-600" />
               <div>
-                <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <User className="h-5 w-5 text-blue-600" />
-                  {lead.name}
-                </h1>
-                <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
-                  {lead.email && (
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-3 w-3" />
-                      {lead.email}
-                    </span>
-                  )}
-                  {lead.contact && (
-                    <span className="flex items-center gap-1">
-                      <Phone className="h-3 w-3" />
-                      {lead.contact}
-                    </span>
-                  )}
-                </div>
+                <p className="text-sm font-medium text-slate-900">{user?.email?.split('@')[0] || 'User'}</p>
+                <p className="text-xs text-slate-600">Sales Agent</p>
               </div>
             </div>
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 px-4 py-2">
-              {recordings.length} Recording{recordings.length !== 1 ? 's' : ''}
-            </Badge>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Lead Info Card */}
-        {lead.description && (
-          <Card className="mb-6 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="h-5 w-5 text-blue-600" />
-                Description
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-slate-700">{lead.description}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Recordings Section */}
-        <Card className="bg-white shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-blue-600" />
-              Call Recordings
-            </CardTitle>
-            <CardDescription>
-              All recordings associated with this lead
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {recordings.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FileText className="h-8 w-8 text-slate-400" />
+      <main className="max-w-7xl mx-auto px-8 py-8 space-y-6">
+        {/* Lead Profile Card */}
+        <Card className="hover:shadow-md transition-shadow duration-200">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h2 className="text-2xl font-semibold text-slate-900">{lead.name}</h2>
+                  {getLeadStatusBadge(recordings)}
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">No Recordings Yet</h3>
-                <p className="text-slate-600 mb-4">No call recordings have been associated with this lead.</p>
-                <Button onClick={() => navigate('/?view=dashboard&tab=recordings')}>
-                  Add Recording
-                </Button>
+                {lead.description && (
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <MapPin className="h-4 w-4" />
+                    <span className="text-sm">{lead.description}</span>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="space-y-4">
-                {recordings.map((recording) => {
-                  const analysis = recording.analyses;
-                  return (
-                    <div 
-                      key={recording.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-                      onClick={() => {
-                        if (analysis && analysis.status?.toLowerCase() === 'completed') {
-                          navigate(`/analysis/${analysis.id}?from=lead&leadId=${id}`);
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="p-3 bg-blue-100 rounded-lg">
-                          <Play className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium text-slate-900">{recording.file_name || 'Unnamed Recording'}</h4>
-                          <p className="text-sm text-slate-600 flex items-center gap-2 mt-1">
-                            <Clock className="h-3 w-3" />
-                            {new Date(recording.created_at).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric', 
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                            {recording.duration_seconds && (
-                              <span className="ml-2">
-                                • {Math.floor(recording.duration_seconds / 60)}:{(recording.duration_seconds % 60).toString().padStart(2, '0')}
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-6">
-                        {analysis ? (
-                          <>
-                            {analysis.sentiments_score !== null && analysis.sentiments_score !== undefined && (
-                              <div className="text-center">
-                                <p className="text-xs text-slate-600 mb-1">Sentiment</p>
-                                <p className={`font-semibold ${getSentimentColor(analysis.sentiments_score)}`}>
-                                  {analysis.sentiments_score}%
-                                </p>
-                              </div>
-                            )}
-                            {analysis.engagement_score !== null && analysis.engagement_score !== undefined && (
-                              <div className="text-center">
-                                <p className="text-xs text-slate-600 mb-1">Engagement</p>
-                                <p className={`font-semibold ${getSentimentColor(analysis.engagement_score)}`}>
-                                  {analysis.engagement_score}%
-                                </p>
-                              </div>
-                            )}
-                            {getStatusBadge(analysis.status)}
-                          </>
-                        ) : (
-                          <Badge variant="secondary">No Analysis</Badge>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+            </div>
+
+            {/* Contact Info Grid */}
+            <div className="grid grid-cols-2 gap-4 mb-6 py-4 border-t border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Phone className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-600">Phone Number</p>
+                  <p className="text-sm font-medium text-slate-900">{lead.contact}</p>
+                </div>
               </div>
-            )}
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-100 rounded-lg">
+                  <Mail className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-600">Email Address</p>
+                  <p className="text-sm font-medium text-slate-900">{lead.email}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-slate-100 rounded-lg">
+                  <PhoneCall className="h-5 w-5 text-slate-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-600">Total Calls</p>
+                  <p className="text-lg font-semibold text-slate-900">{totalCalls}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-100 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-600">Avg Call Quality</p>
+                  <p className="text-lg font-semibold text-emerald-600">
+                    {avgSentiment > 0 ? `${(avgSentiment / 10).toFixed(1)}/10` : 'N/A'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Activity className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-600">Completed</p>
+                  <p className="text-lg font-semibold text-blue-600">{completedCalls}</p>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Call History Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-semibold text-slate-900">Call History</h3>
+            <p className="text-sm text-slate-600 mt-1">All recordings associated with this lead</p>
+          </div>
+          <Button onClick={() => navigate('/?view=dashboard&tab=recordings')}>
+            <PhoneCall className="h-4 w-4 mr-2" />
+            Add Recording
+          </Button>
+        </div>
+
+        {/* Call History Cards */}
+        {recordings.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <PhoneCall className="h-8 w-8 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">No Recordings Yet</h3>
+              <p className="text-slate-600 mb-4">No call recordings have been associated with this lead.</p>
+              <Button onClick={() => navigate('/?view=dashboard&tab=recordings')}>
+                <PhoneCall className="h-4 w-4 mr-2" />
+                Add Recording
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {recordings.map((recording) => {
+              const analysis = recording.analyses;
+              return (
+                <Card 
+                  key={recording.id}
+                  className="hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                  onClick={() => {
+                    if (analysis && analysis.status?.toLowerCase() === 'completed') {
+                      navigate(`/analysis/${analysis.id}?from=lead&leadId=${id}`);
+                    }
+                  }}
+                >
+                  <CardContent className="p-6">
+                    {/* Recording Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="p-3 bg-blue-100 rounded-lg">
+                          <Play className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-lg font-semibold text-slate-900">
+                            {recording.file_name || 'Unnamed Recording'}
+                          </h4>
+                          <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(recording.created_at).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                year: 'numeric'
+                              })}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(recording.created_at).toLocaleTimeString('en-US', { 
+                                hour: '2-digit', 
+                                minute: '2-digit'
+                              })}
+                            </span>
+                            {recording.duration_seconds && (
+                              <span>
+                                • {Math.floor(recording.duration_seconds / 60)}:{(recording.duration_seconds % 60).toString().padStart(2, '0')} min
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {getStatusBadge(analysis?.status)}
+                    </div>
+
+                    {/* Analysis Metrics */}
+                    {analysis && analysis.status?.toLowerCase() === 'completed' && (
+                      <div className="grid grid-cols-4 gap-4 pt-4 border-t border-slate-200">
+                        {analysis.sentiments_score !== null && analysis.sentiments_score !== undefined && (
+                          <div className="text-center">
+                            <p className="text-xs text-slate-600 mb-1">Sentiment</p>
+                            <p className={`text-xl font-semibold ${getSentimentColor(analysis.sentiments_score)}`}>
+                              {analysis.sentiments_score}%
+                            </p>
+                          </div>
+                        )}
+                        {analysis.engagement_score !== null && analysis.engagement_score !== undefined && (
+                          <div className="text-center">
+                            <p className="text-xs text-slate-600 mb-1">Engagement</p>
+                            <p className={`text-xl font-semibold ${getSentimentColor(analysis.engagement_score)}`}>
+                              {analysis.engagement_score}%
+                            </p>
+                          </div>
+                        )}
+                        {analysis.confidence_score_executive !== null && analysis.confidence_score_executive !== undefined && (
+                          <div className="text-center">
+                            <p className="text-xs text-slate-600 mb-1">Confidence</p>
+                            <p className="text-xl font-semibold text-blue-600">
+                              {analysis.confidence_score_executive}/10
+                            </p>
+                          </div>
+                        )}
+                        {analysis.lead_type && (
+                          <div className="text-center">
+                            <p className="text-xs text-slate-600 mb-1">Lead Type</p>
+                            <p className="text-sm font-medium text-slate-900">
+                              {analysis.lead_type}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* View Details Button */}
+                    {analysis && analysis.status?.toLowerCase() === 'completed' && (
+                      <div className="mt-4 pt-4 border-t border-slate-200">
+                        <Button 
+                          variant="default"
+                          className="w-full bg-amber-500 hover:bg-amber-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/analysis/${analysis.id}?from=lead&leadId=${id}`);
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          View Full Analysis
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </main>
     </div>
   );
