@@ -21,9 +21,10 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ onShowProfile }: DashboardProps) {
-  const [selectedTab, setSelectedTab] = useState("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'overview';
+  const [selectedTab, setSelectedTab] = useState(initialTab);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [searchParams] = useSearchParams();
   const { data: dashboardData, isLoading, error } = useDashboardStats();
   const { data: recordings, isLoading: recordingsLoading } = useRecordings();
   const { data: analyses } = useAnalyses();
@@ -43,13 +44,11 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
   // Enable analysis notifications for real-time status updates
   useAnalysisNotifications();
 
-  // Handle tab parameter from URL
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab && ['overview', 'recordings', 'leads'].includes(tab)) {
-      setSelectedTab(tab);
-    }
-  }, [searchParams]);
+  // Update URL when tab changes
+  const handleTabChange = (tab: string) => {
+    setSelectedTab(tab);
+    setSearchParams({ tab, view: 'dashboard' }, { replace: true });
+  };
 
   const getSentimentColor = (score: number) => {
     if (score >= 80) return "text-success";
@@ -295,7 +294,7 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
               <Button 
                 variant="ghost"
                 className={`w-full justify-start font-medium text-sm transition-all ${selectedTab === "overview" ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "text-muted-foreground hover:text-foreground hover:bg-gray-50"}`}
-                onClick={() => setSelectedTab("overview")}
+                onClick={() => handleTabChange("overview")}
               >
                 <TrendingUp className="h-4 w-4 mr-3" />
                 Overview
@@ -303,7 +302,7 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
               <Button 
                 variant="ghost"
                 className={`w-full justify-start font-medium text-sm transition-all ${selectedTab === "recordings" ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "text-muted-foreground hover:text-foreground hover:bg-gray-50"}`}
-                onClick={() => setSelectedTab("recordings")}
+                onClick={() => handleTabChange("recordings")}
               >
                 <Phone className="h-4 w-4 mr-3" />
                 Call History
@@ -313,7 +312,7 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
               <Button 
                 variant="ghost"
                 className={`w-full justify-start font-medium text-sm transition-all ${selectedTab === "leads" ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "text-muted-foreground hover:text-foreground hover:bg-gray-50"}`}
-                onClick={() => setSelectedTab("leads")}
+                onClick={() => handleTabChange("leads")}
               >
                 <UserPlus className="h-4 w-4 mr-3" />
                 Leads

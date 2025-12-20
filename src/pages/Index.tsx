@@ -12,14 +12,21 @@ const Index = () => {
   const initialView = searchParams.get('view') as ViewType || 'dashboard'; // Default to dashboard if no param
   const [currentView, setCurrentView] = useState<ViewType>(initialView);
 
-  // Update URL when view changes
+  // Update URL when view changes, preserving existing params
   useEffect(() => {
+    const currentTab = searchParams.get('tab');
     if (currentView === 'landing') {
       navigate('/', { replace: true });
     } else {
-      navigate(`/?view=${currentView}`, { replace: true });
+      // Preserve tab parameter if it exists
+      const params = new URLSearchParams();
+      params.set('view', currentView);
+      if (currentTab) {
+        params.set('tab', currentTab);
+      }
+      navigate(`/?${params.toString()}`, { replace: true });
     }
-  }, [currentView, navigate]);
+  }, [currentView, navigate, searchParams]);
 
   const handleGetStarted = () => {
     setCurrentView('dashboard');
