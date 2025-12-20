@@ -32,7 +32,8 @@ export function useAnalysisNotifications() {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 5000, // Check every 5 seconds
+    refetchInterval: 3000, // Check every 3 seconds for faster updates
+    refetchIntervalInBackground: true, // Continue polling even when tab is not focused
     enabled: !!user
   });
 

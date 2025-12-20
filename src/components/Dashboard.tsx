@@ -11,7 +11,7 @@ import AllLeadsPage from "./AllLeadsPage";
 import LeadGroupsPage from "./LeadGroupsPage";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-// import { useAnalysisNotifications } from "@/hooks/useAnalysisNotifications";
+import { useAnalysisNotifications } from "@/hooks/useAnalysisNotifications";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Analysis } from "@/lib/supabase";
@@ -40,8 +40,8 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
   const warmLeads = leads?.filter(l => l.lead_type?.toLowerCase() === 'warm').length || 0;
   const coldLeads = leads?.filter(l => l.lead_type?.toLowerCase() === 'cold').length || 0;
   
-  // Analysis notifications disabled per user request
-  // useAnalysisNotifications();
+  // Enable analysis notifications for real-time status updates
+  useAnalysisNotifications();
 
   // Handle tab parameter from URL
   useEffect(() => {
@@ -91,17 +91,27 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
       case "processing":
       case "in_progress":
       case "analyzing":
-        return <Badge className="bg-accent-blue-light text-accent-blue">Processing</Badge>;
+        return (
+          <Badge className="bg-accent-blue-light text-accent-blue flex items-center gap-1">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Processing
+          </Badge>
+        );
       case "transcribing":
       case "transcribed":
-        return <Badge className="bg-purple-100 text-purple-700">Transcribing</Badge>;
+        return (
+          <Badge className="bg-purple-100 text-purple-700 flex items-center gap-1">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Transcribing
+          </Badge>
+        );
       case "queued":
       case "pending":
       case "uploaded":
         return (
           <Badge className="bg-accent-blue-light text-accent-blue flex items-center gap-1">
             <Loader2 className="h-3 w-3 animate-spin" />
-            Processing
+            Queued
           </Badge>
         );
       case "failed":
@@ -589,10 +599,27 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
                   <h2 className="text-2xl font-semibold text-slate-900">Call History</h2>
                   <p className="text-sm text-slate-600 mt-1">Complete history of your call recordings and analyses</p>
                 </div>
-                <Button onClick={() => setIsAddModalOpen(true)}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Add Call
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      queryClient.invalidateQueries({ queryKey: ['recordings'] });
+                      queryClient.invalidateQueries({ queryKey: ['analyses'] });
+                      queryClient.invalidateQueries({ queryKey: ['dashboard_stats'] });
+                      toast({
+                        title: "Refreshing...",
+                        description: "Updating call analysis status",
+                      });
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                  <Button onClick={() => setIsAddModalOpen(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Add Call
+                  </Button>
+                </div>
               </div>
 
               {recordingsLoading ? (

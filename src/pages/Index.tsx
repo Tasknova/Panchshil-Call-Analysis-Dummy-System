@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import LandingPage from "@/components/LandingPage";
 import Dashboard from "@/components/Dashboard";
 import ProfilePage from "@/components/ProfilePage";
@@ -8,8 +8,18 @@ type ViewType = 'landing' | 'dashboard' | 'profile';
 
 const Index = () => {
   const [searchParams] = useSearchParams();
-  const initialView = searchParams.get('view') === 'dashboard' ? 'dashboard' : 'landing';
+  const navigate = useNavigate();
+  const initialView = searchParams.get('view') as ViewType || 'dashboard'; // Default to dashboard if no param
   const [currentView, setCurrentView] = useState<ViewType>(initialView);
+
+  // Update URL when view changes
+  useEffect(() => {
+    if (currentView === 'landing') {
+      navigate('/', { replace: true });
+    } else {
+      navigate(`/?view=${currentView}`, { replace: true });
+    }
+  }, [currentView, navigate]);
 
   const handleGetStarted = () => {
     setCurrentView('dashboard');

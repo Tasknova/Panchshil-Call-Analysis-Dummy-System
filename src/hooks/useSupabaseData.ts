@@ -24,6 +24,7 @@ export function useRecordings() {
         () => {
           // Invalidate and refetch recordings when any change occurs
           queryClient.invalidateQueries({ queryKey: ['recordings', user.id] })
+          queryClient.invalidateQueries({ queryKey: ['dashboard_stats'] })
         }
       )
       .subscribe()
@@ -53,7 +54,9 @@ export function useRecordings() {
       if (error) throw error
       return data as Recording[]
     },
-    enabled: !!user
+    enabled: !!user,
+    refetchInterval: 3000, // Poll every 3 seconds for status updates
+    refetchIntervalInBackground: true // Continue polling even when tab is not focused
   })
 }
 
@@ -80,6 +83,8 @@ export function useAnalyses() {
           queryClient.invalidateQueries({ queryKey: ['analyses', user.id] })
           // Also invalidate recordings since they show analysis status
           queryClient.invalidateQueries({ queryKey: ['recordings', user.id] })
+          // Also invalidate dashboard stats
+          queryClient.invalidateQueries({ queryKey: ['dashboard_stats'] })
         }
       )
       .subscribe()
@@ -114,7 +119,9 @@ export function useAnalyses() {
       if (error) throw error
       return data as (Analysis & { recordings: Recording })[]
     },
-    enabled: !!user
+    enabled: !!user,
+    refetchInterval: 3000, // Poll every 3 seconds for status updates
+    refetchIntervalInBackground: true // Continue polling even when tab is not focused
   })
 }
 
