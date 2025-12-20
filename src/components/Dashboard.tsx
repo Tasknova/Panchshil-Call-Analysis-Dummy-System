@@ -284,6 +284,13 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
               <h1 className="text-xl font-semibold text-foreground tracking-wide">Voice Intelligence</h1>
             </div>
           </div>
+          <Button 
+            variant="ghost"
+            onClick={() => window.location.href = '/'}
+            className="text-muted-foreground hover:text-foreground hover:bg-gray-50 font-medium transition-all"
+          >
+            Logout
+          </Button>
         </div>
       </header>
 

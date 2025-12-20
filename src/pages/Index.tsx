@@ -9,7 +9,7 @@ type ViewType = 'landing' | 'dashboard' | 'profile';
 const Index = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const initialView = searchParams.get('view') as ViewType || 'dashboard'; // Default to dashboard if no param
+  const initialView = searchParams.get('view') as ViewType || 'landing'; // Default to landing page on first launch
   const [currentView, setCurrentView] = useState<ViewType>(initialView);
 
   // Update URL when view changes, preserving existing params
