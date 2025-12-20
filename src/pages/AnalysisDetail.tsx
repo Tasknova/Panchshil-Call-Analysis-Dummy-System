@@ -19,7 +19,6 @@ export default function AnalysisDetail() {
   const [recording, setRecording] = useState<Recording | null>(null);
   const [lead, setLead] = useState<Lead | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isAudioPlayerOpen, setIsAudioPlayerOpen] = useState(false);
@@ -258,7 +257,9 @@ export default function AnalysisDetail() {
                   const from = searchParams.get('from');
                   const leadId = searchParams.get('leadId');
                   
-                  if (from === 'lead' && leadId) {
+                  if (from === 'overview') {
+                    navigate('/?view=dashboard&tab=overview');
+                  } else if (from === 'lead' && leadId) {
                     navigate(`/lead/${leadId}`);
                   } else {
                     navigate('/?view=dashboard&tab=recordings');
@@ -662,30 +663,8 @@ export default function AnalysisDetail() {
 
         </div>
 
-        {/* Advanced Details Toggle */}
-        <div className="flex justify-center py-4">
-          <Button
-            variant="outline"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="px-8 py-3 text-base font-medium border-2 border-slate-300 text-slate-700 hover:bg-slate-700 hover:text-white hover:border-slate-700 transition-all duration-300 shadow-md hover:shadow-lg"
-          >
-            {showAdvanced ? (
-              <>
-                <ChevronDown className="h-5 w-5 mr-2" />
-                Hide Detailed Analysis
-              </>
-            ) : (
-              <>
-                <ChevronRight className="h-5 w-5 mr-2" />
-                Show Detailed Analysis
-              </>
-            )}
-          </Button>
-        </div>
-
         {/* Advanced Section Content */}
-        {showAdvanced && (
-          <div className="space-y-6">
+        <div className="space-y-6">
             
             {/* Evidence Quotes */}
             {analysis.evidence_quotes && (
@@ -722,22 +701,15 @@ export default function AnalysisDetail() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <div className="space-y-3">
-                    {analysis.objections_detected ? (
-                      analysis.objections_detected.split(/\d+\)/).filter(Boolean).map((objection: string, index: number) => (
-                        <div key={index} className="flex items-start gap-3 p-3 bg-rose-50 rounded-lg border border-rose-200">
-                          <div className="flex-shrink-0 w-7 h-7 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm">
-                            {index + 1}
-                          </div>
-                          <p className="text-slate-700 leading-relaxed flex-1 pt-1">{objection.trim().replace(/\*\*/g, '')}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-slate-600">
-                        {analysis.objections_handeled ? analysis.objections_handeled.replace(/\*\*/g, '') : 'No objections recorded'}
-                      </p>
-                    )}
-                  </div>
+                  {analysis.objections_detected ? (
+                    <p className="text-slate-700 leading-relaxed whitespace-pre-line">
+                      {analysis.objections_detected.replace(/\*\*/g, '')}
+                    </p>
+                  ) : (
+                    <p className="text-slate-600">
+                      {analysis.objections_handeled ? analysis.objections_handeled.replace(/\*\*/g, '') : 'No objections recorded'}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -803,7 +775,6 @@ export default function AnalysisDetail() {
             </Card>
 
           </div>
-        )}
       </div>
 
       {/* Audio Player Modal */}

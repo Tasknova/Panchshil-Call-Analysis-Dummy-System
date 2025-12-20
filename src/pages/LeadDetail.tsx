@@ -5,18 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase, Lead, Recording, Analysis } from "@/lib/supabase";
-import { ArrowLeft, User, Mail, Phone, FileText, Play, Clock, Activity, TrendingUp, Loader2, Calendar, PhoneCall, MessageSquare, ExternalLink, MapPin, Bell } from "lucide-react";
-
-// Helper function to get property type tags for leads
-const getPropertyTypeTags = (leadName: string): string[] => {
-  const name = leadName.toLowerCase();
-  if (name.includes('rajpal') || name.includes('singh')) return ['Commercial', 'Office Space'];
-  if (name.includes('aarav') || name.includes('varma')) return ['Residential', 'Luxury Villa'];
-  if (name.includes('jack')) return ['Commercial', 'Retail'];
-  if (name.includes('smith')) return ['Residential', 'Apartment'];
-  if (name.includes('johnson')) return ['Commercial', 'Warehouse'];
-  return ['Residential', 'Plot'];
-};
+import { ArrowLeft, User, Mail, Phone, FileText, Play, Clock, Activity, TrendingUp, Loader2, Calendar, PhoneCall, MessageSquare, ExternalLink, MapPin, Bell, Flame, Snowflake, Target, CheckCircle2 } from "lucide-react";
 
 // Helper function to get description for specific leads
 const getLeadDescription = (leadName: string, currentDescription?: string): string => {
@@ -142,15 +131,34 @@ export default function LeadDetail() {
     );
   }
 
-  const getLeadStatusBadge = (recordings: (Recording & { analyses?: Analysis })[]) => {
-    if (recordings.length === 0) return null;
-    const latestAnalysis = recordings[0]?.analyses;
-    if (!latestAnalysis?.lead_type) return null;
+  const getLeadStatusBadge = (leadType?: string) => {
+    if (!leadType) return null;
     
-    const status = latestAnalysis.lead_type.toLowerCase();
-    if (status.includes('hot')) return <Badge className="bg-rose-500 text-white">Hot Lead</Badge>;
-    if (status.includes('warm')) return <Badge className="bg-amber-500 text-white">Warm Lead</Badge>;
-    if (status.includes('cold')) return <Badge className="bg-blue-500 text-white">Cold Lead</Badge>;
+    const type = leadType.toLowerCase();
+    if (type === 'hot') return (
+      <Badge className="bg-rose-500 text-white flex items-center gap-1">
+        <Flame className="h-3 w-3" />
+        Hot Lead
+      </Badge>
+    );
+    if (type === 'warm') return (
+      <Badge className="bg-amber-500 text-white flex items-center gap-1">
+        <Target className="h-3 w-3" />
+        Warm Lead
+      </Badge>
+    );
+    if (type === 'cold') return (
+      <Badge className="bg-blue-500 text-white flex items-center gap-1">
+        <Snowflake className="h-3 w-3" />
+        Cold Lead
+      </Badge>
+    );
+    if (type === 'closing') return (
+      <Badge className="bg-green-500 text-white flex items-center gap-1">
+        <CheckCircle2 className="h-3 w-3" />
+        Closing
+      </Badge>
+    );
     return null;
   };
 
@@ -179,18 +187,6 @@ export default function LeadDetail() {
               <h1 className="text-xl font-semibold text-foreground tracking-wide">Lead Details</h1>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="icon" className="rounded-full">
-              <Bell className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg">
-              <User className="h-5 w-5 text-slate-600" />
-              <div>
-                <p className="text-sm font-medium text-slate-900">{user?.email?.split('@')[0] || 'User'}</p>
-                <p className="text-xs text-slate-600">Sales Agent</p>
-              </div>
-            </div>
-          </div>
         </div>
       </header>
 
@@ -203,16 +199,16 @@ export default function LeadDetail() {
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <h2 className="text-2xl font-semibold text-slate-900">{lead.name}</h2>
-                  {getLeadStatusBadge(recordings)}
+                  {getLeadStatusBadge(lead.lead_type)}
                 </div>
-                {/* Property Type Tags */}
-                <div className="flex items-center gap-2 mt-2 mb-3">
-                  {getPropertyTypeTags(lead.name).map((tag, index) => (
-                    <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      {tag}
+                {/* Project Name */}
+                {lead.project && (
+                  <div className="flex items-center gap-2 mt-2 mb-3">
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      {lead.project}
                     </Badge>
-                  ))}
-                </div>
+                  </div>
+                )}
                 {/* Lead Description */}
                 <div className="flex items-center gap-2 text-slate-600">
                   <MapPin className="h-4 w-4" />
@@ -260,8 +256,8 @@ export default function LeadDetail() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-600">Avg Call Quality</p>
-                  <p className="text-lg font-semibold text-emerald-600">
-                    {avgSentiment > 0 ? `${(avgSentiment / 10).toFixed(1)}/10` : 'N/A'}
+                  <p className={`text-lg font-semibold ${avgSentiment > 0 ? 'text-emerald-600' : 'text-slate-500'}`}>
+                    {avgSentiment > 0 ? `${(avgSentiment / 10).toFixed(1)}/10` : 'Not Contacted'}
                   </p>
                 </div>
               </div>

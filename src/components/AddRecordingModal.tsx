@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase, Lead } from "@/lib/supabase";
+import { supabase, Lead, LeadGroup } from "@/lib/supabase";
 import { Loader2, Upload, FileAudio, FileText, Search, Plus, User } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
@@ -150,8 +150,12 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [allLeads, setAllLeads] = useState<Lead[]>([]); // Store all leads
+  const [leadGroups, setLeadGroups] = useState<LeadGroup[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
   const [leadSearchOpen, setLeadSearchOpen] = useState(false);
+  const [groupSearchOpen, setGroupSearchOpen] = useState(false);
   const [leadSearchQuery, setLeadSearchQuery] = useState("");
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
   const [callDate, setCallDate] = useState<Date | undefined>(new Date());
@@ -162,6 +166,7 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
   // Fetch leads on component mount and when add lead modal closes
   useEffect(() => {
     if (open && user) {
+      fetchLeadGroups();
       fetchLeads();
     }
   }, [open, user]);
@@ -173,20 +178,63 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
     }
   }, [isAddLeadModalOpen, open, user]);
 
-  const fetchLeads = async () => {
+  // Filter leads when group selection changes
+  useEffect(() => {
+    if (selectedGroup) {
+      const filteredLeads = allLeads.filter(lead => lead.group_id === selectedGroup);
+      setLeads(filteredLeads);
+    } else {
+      setLeads(allLeads);
+    }
+  }, [selectedGroup, allLeads]);
+
+  const fetchLeadGroups = async () => {
     if (!user) return;
     
     try {
       const { data, error } = await supabase
-        .from('leads')
+        .from('lead_groups')
         .select('*')
-        .eq('user_id', user.id)
-        .order('name', { ascending: true });
+        .order('group_name', { ascending: true });
 
       if (error) throw error;
-      setLeads(data || []);
+      console.log('Fetched lead groups:', data);
+      setLeadGroups(data || []);
+    } catch (error) {
+      console.error('Error fetching lead groups:', error);
+    }
+  };
+
+  const fetchLeads = async () => {
+    if (!user) return;
+    
+    try {
+      console.log('Fetching leads for user:', user.id);
+      // Fetch all leads (remove user_id filter to show all leads for now)
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching leads:', error);
+        throw error;
+      }
+      
+      console.log('Fetched leads:', data);
+      setAllLeads(data || []);
+      setLeads(data || []); // Initially show all leads
+      
+      if (!data || data.length === 0) {
+        console.warn('No leads found');
+      }
     } catch (error) {
       console.error('Error fetching leads:', error);
+      toast({
+        title: "Warning",
+        description: "Could not load leads list. You can still upload the recording.",
+        variant: "default",
+      });
     }
   };
 
@@ -430,6 +478,7 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
     setFileName("");
     setTranscript("");
     setSelectedLead(null);
+    setSelectedGroup(null);
     setCallDate(new Date());
     setCallTime(format(new Date(), "HH:mm"));
     setUploadProgress(0);
@@ -439,7 +488,7 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <img 
@@ -455,7 +504,7 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 pb-4">
           <Tabs value={inputMode} onValueChange={(value) => setInputMode(value as "audio" | "transcript")} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="audio" className="flex items-center gap-2">
@@ -528,6 +577,68 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
             />
             <p className="text-xs text-muted-foreground">
               Choose a unique, descriptive name for this recording.
+            </p>
+          </div>
+
+          {/* Lead Group Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="group-select">Lead Group (Optional)</Label>
+            <Popover open={groupSearchOpen} onOpenChange={setGroupSearchOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={groupSearchOpen}
+                  className="w-full justify-between"
+                  disabled={isLoading}
+                >
+                  {selectedGroup
+                    ? leadGroups.find((group) => group.id === selectedGroup)?.group_name
+                    : "All groups"}
+                  <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[400px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search groups..." />
+                  <CommandList>
+                    <CommandEmpty>No group found.</CommandEmpty>
+                    <CommandGroup heading="Lead Groups">
+                      <CommandItem
+                        value="all"
+                        onSelect={() => {
+                          setSelectedGroup(null);
+                          setGroupSearchOpen(false);
+                          setSelectedLead(null); // Clear lead selection when changing group
+                        }}
+                      >
+                        <span className="font-medium">All Groups</span>
+                      </CommandItem>
+                      {leadGroups.map((group) => (
+                        <CommandItem
+                          key={group.id}
+                          value={group.group_name}
+                          onSelect={() => {
+                            setSelectedGroup(group.id);
+                            setGroupSearchOpen(false);
+                            setSelectedLead(null); // Clear lead selection when changing group
+                          }}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{group.group_name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {allLeads.filter(l => l.group_id === group.id).length} leads
+                            </span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            <p className="text-xs text-muted-foreground">
+              Filter leads by group or select from all leads.
             </p>
           </div>
 

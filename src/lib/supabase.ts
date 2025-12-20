@@ -100,6 +100,8 @@ export interface Lead {
   description?: string
   other?: any // JSON object for additional fields
   group_id?: string
+  lead_type?: string // hot, warm, cold, closing
+  project?: string // Project name
   created_at: string
   updated_at: string
   lead_groups?: LeadGroup // Joined data

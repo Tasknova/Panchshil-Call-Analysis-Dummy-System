@@ -34,17 +34,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Lead } from "@/lib/supabase";
 import EditLeadModal from "./EditLeadModal";
 
-// Helper function to get property type tags for leads
-const getPropertyTypeTags = (leadName: string): string[] => {
-  const name = leadName.toLowerCase();
-  if (name.includes('rajpal') || name.includes('singh')) return ['Commercial', 'Office Space'];
-  if (name.includes('aarav') || name.includes('varma')) return ['Residential', 'Luxury Villa'];
-  if (name.includes('jack')) return ['Commercial', 'Retail'];
-  if (name.includes('smith')) return ['Residential', 'Apartment'];
-  if (name.includes('johnson')) return ['Commercial', 'Warehouse'];
-  return ['Residential', 'Plot'];
-};
-
 // Helper function to get description for specific leads
 const getLeadDescription = (leadName: string, currentDescription?: string): string => {
   const name = leadName.toLowerCase();
@@ -224,7 +213,7 @@ export default function GroupLeadsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Property Type</TableHead>
+                    <TableHead>Project</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Description</TableHead>
@@ -236,13 +225,11 @@ export default function GroupLeadsPage() {
                     <TableRow key={lead.id}>
                       <TableCell className="font-medium">{lead.name}</TableCell>
                       <TableCell>
-                        <div className="flex gap-1 flex-wrap">
-                          {getPropertyTypeTags(lead.name).map((tag, index) => (
-                            <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
+                        {lead.project && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                            {lead.project}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">

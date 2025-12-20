@@ -56,19 +56,29 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       <nav className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-lg bg-card/95">
         <div className="max-w-7xl mx-auto px-8">
           <div className="flex justify-between items-center h-20">
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
               <img 
                 src="/panchsil_logo.png.jpg" 
                 alt="Panchshil" 
                 className="h-12 w-auto cursor-pointer hover:opacity-70 transition-opacity duration-300"
                 onClick={() => window.location.href = '/'}
               />
+              <span className="text-xl font-semibold tracking-wide">Panchshil Reality</span>
+            </div>
+            <div>
+              <Button 
+                size="default" 
+                onClick={onGetStarted}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Enter
+              </Button>
             </div>
           </div>
         </div>
       </nav>
 
-      <section className="relative bg-background px-8 py-32 text-foreground">
+      <section className="relative bg-background px-8 py-12 text-foreground">
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div className="space-y-8">

@@ -36,7 +36,11 @@ import {
   Calendar,
   TrendingUp,
   PhoneCall,
-  ExternalLink
+  ExternalLink,
+  Flame,
+  Snowflake,
+  Target,
+  CheckCircle2
 } from "lucide-react";
 import { useLeads, useDeleteLead } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
@@ -45,18 +49,6 @@ import { Lead, Recording, Analysis, supabase } from "@/lib/supabase";
 import AddLeadModal from "./AddLeadModal";
 import EditLeadModal from "./EditLeadModal";
 import CSVUploadDialog from "./CSVUploadDialog";
-
-// Helper function to get property type tags for leads
-const getPropertyTypeTags = (leadName: string): string[] => {
-  const name = leadName.toLowerCase();
-  if (name.includes('rajpal') || name.includes('singh')) return ['Commercial', 'Office Space'];
-  if (name.includes('aarav') || name.includes('varma')) return ['Residential', 'Luxury Villa'];
-  if (name.includes('jack')) return ['Commercial', 'Retail'];
-  if (name.includes('smith')) return ['Residential', 'Apartment'];
-  if (name.includes('johnson')) return ['Commercial', 'Warehouse'];
-  // Default tags for other leads
-  return ['Residential', 'Plot'];
-};
 
 // Helper function to get description for specific leads
 const getLeadDescription = (leadName: string, currentDescription?: string): string => {
@@ -103,8 +95,19 @@ function AllLeadsPage() {
     const fetchLeadStats = async () => {
       if (!leads || !user) return;
 
+      const nextActionVariations = [
+        { action: 'Follow up call', time: 'Today, 3:00 PM' },
+        { action: 'Send property brochure', time: 'Tomorrow, 11:30 AM' },
+        { action: 'Schedule site visit', time: 'Dec 23, 2:00 PM' },
+        { action: 'Follow up call', time: 'Dec 22, 10:00 AM' },
+        { action: 'Send pricing details', time: 'Tomorrow, 4:00 PM' },
+        { action: 'Review proposal', time: 'Dec 24, 9:00 AM' },
+        { action: 'Follow up call', time: 'Next week Monday' },
+        { action: 'Schedule meeting', time: 'Dec 23, 5:00 PM' }
+      ];
+
       const enrichedLeads = await Promise.all(
-        leads.map(async (lead) => {
+        leads.map(async (lead, index) => {
           // Fetch recordings for this lead
           const { data: recordings } = await supabase
             .from('recordings')
@@ -130,13 +133,16 @@ function AllLeadsPage() {
             }
           }
 
+          // Get varied next action
+          const actionVariation = nextActionVariations[index % nextActionVariations.length];
+
           return {
             ...lead,
             callsMade,
             lastCallQuality,
             leadStatus,
-            nextAction: 'Follow up call',
-            nextActionTime: 'Tomorrow, 10:00 AM'
+            nextAction: lastCallQuality ? actionVariation.action : null,
+            nextActionTime: lastCallQuality ? actionVariation.time : null
           } as LeadWithStats;
         })
       );
@@ -158,17 +164,17 @@ function AllLeadsPage() {
     
     if (activeFilter === 'all') return true;
     
-    const leadType = (lead.leadStatus || '').toLowerCase();
-    return leadType.includes(activeFilter);
+    const leadType = (lead.lead_type || '').toLowerCase();
+    return leadType === activeFilter;
   });
 
   // Count leads by status
   const statusCounts = {
     all: leadsWithStats.length,
-    hot: leadsWithStats.filter(l => (l.leadStatus || '').toLowerCase().includes('hot')).length,
-    warm: leadsWithStats.filter(l => (l.leadStatus || '').toLowerCase().includes('warm')).length,
-    cold: leadsWithStats.filter(l => (l.leadStatus || '').toLowerCase().includes('cold')).length,
-    closing: leadsWithStats.filter(l => (l.leadStatus || '').toLowerCase().includes('closing')).length,
+    hot: leadsWithStats.filter(l => (l.lead_type || '').toLowerCase() === 'hot').length,
+    warm: leadsWithStats.filter(l => (l.lead_type || '').toLowerCase() === 'warm').length,
+    cold: leadsWithStats.filter(l => (l.lead_type || '').toLowerCase() === 'cold').length,
+    closing: leadsWithStats.filter(l => (l.lead_type || '').toLowerCase() === 'closing').length,
     site_visit: 0, // Can be enhanced with additional data
     interview: 0,  // Can be enhanced with additional data
     churned: 0     // Can be enhanced with additional data
@@ -210,37 +216,38 @@ function AllLeadsPage() {
     );
   }
 
-  const getStatusBadge = (leadStatus?: string) => {
-    if (!leadStatus) return null;
-    const status = leadStatus.toLowerCase();
-    if (status.includes('hot')) return <Badge className="bg-rose-500 text-white">Hot Lead</Badge>;
-    if (status.includes('warm')) return <Badge className="bg-amber-500 text-white">Warm Lead</Badge>;
-    if (status.includes('cold')) return <Badge className="bg-blue-500 text-white">Cold Lead</Badge>;
+  const getStatusBadge = (leadType?: string) => {
+    if (!leadType) return null;
+    const type = leadType.toLowerCase();
+    if (type === 'hot') return (
+      <Badge className="bg-rose-500 text-white flex items-center gap-1">
+        <Flame className="h-3 w-3" />
+        Hot Lead
+      </Badge>
+    );
+    if (type === 'warm') return (
+      <Badge className="bg-amber-500 text-white flex items-center gap-1">
+        <Target className="h-3 w-3" />
+        Warm Lead
+      </Badge>
+    );
+    if (type === 'cold') return (
+      <Badge className="bg-blue-500 text-white flex items-center gap-1">
+        <Snowflake className="h-3 w-3" />
+        Cold Lead
+      </Badge>
+    );
+    if (type === 'closing') return (
+      <Badge className="bg-green-500 text-white flex items-center gap-1">
+        <CheckCircle2 className="h-3 w-3" />
+        Closing
+      </Badge>
+    );
     return null;
   };
 
   return (
     <div className="space-y-6 pb-8">
-      {/* Header with Welcome Message */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Welcome back, {user?.email?.split('@')[0] || 'User'}</h1>
-          <p className="text-sm text-slate-600 mt-1">Sales Agent</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" className="rounded-full">
-            <Bell className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg">
-            <User className="h-5 w-5 text-slate-600" />
-            <div>
-              <p className="text-sm font-medium text-slate-900">{user?.email?.split('@')[0] || 'User'}</p>
-              <p className="text-xs text-slate-600">Sales Agent</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Status Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2">
         <Button 
@@ -321,16 +328,16 @@ function AllLeadsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <h3 className="text-xl font-semibold text-slate-900">{lead.name}</h3>
-                      {getStatusBadge(lead.leadStatus)}
+                      {getStatusBadge(lead.lead_type)}
                     </div>
-                    {/* Property Type Tags */}
-                    <div className="flex items-center gap-2 mt-2 mb-2">
-                      {getPropertyTypeTags(lead.name).map((tag, index) => (
-                        <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          {tag}
+                    {/* Project Name */}
+                    {lead.project && (
+                      <div className="flex items-center gap-2 mt-2 mb-2">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {lead.project}
                         </Badge>
-                      ))}
-                    </div>
+                      </div>
+                    )}
                     {/* Lead Description */}
                     <div className="flex items-center gap-2 mt-1 text-slate-600">
                       <MapPin className="h-4 w-4" />
@@ -360,8 +367,8 @@ function AllLeadsPage() {
                     </div>
                     <div>
                       <p className="text-xs text-slate-600">Last Call Quality</p>
-                      <p className="text-lg font-semibold text-emerald-600">
-                        {lead.lastCallQuality ? `${(lead.lastCallQuality / 10).toFixed(1)}/10` : 'N/A'}
+                      <p className={`text-lg font-semibold ${lead.lastCallQuality ? 'text-emerald-600' : 'text-slate-500'}`}>
+                        {lead.lastCallQuality ? `${(lead.lastCallQuality / 10).toFixed(1)}/10` : 'Not Contacted'}
                       </p>
                     </div>
                   </div>
@@ -371,7 +378,9 @@ function AllLeadsPage() {
                     </div>
                     <div>
                       <p className="text-xs text-slate-600">Next Action</p>
-                      <p className="text-sm font-medium text-blue-600">{lead.nextActionTime || 'TBD'}</p>
+                      <p className={`text-sm font-medium ${lead.nextActionTime ? 'text-blue-600' : 'text-slate-500'}`}>
+                        {lead.nextActionTime || 'Not Contacted'}
+                      </p>
                     </div>
                   </div>
                 </div>

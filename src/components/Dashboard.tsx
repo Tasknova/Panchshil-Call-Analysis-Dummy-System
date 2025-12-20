@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Upload, Play, Download, MoreHorizontal, TrendingUp, TrendingDown, Users, Phone, Star, AlertTriangle, Trash2, BarChart3, Loader2, User, UserPlus, FolderOpen, FileSpreadsheet, RefreshCw, Smile, Meh, Frown, Flame, ThumbsUp, ThumbsDown, Zap, HelpCircle, AlertCircle, Clock } from "lucide-react";
-import { useDashboardStats, useRecordings, useAnalyses, useDeleteRecording } from "@/hooks/useSupabaseData";
+import { useDashboardStats, useRecordings, useAnalyses, useDeleteRecording, useLeads } from "@/hooks/useSupabaseData";
 import AddRecordingModal from "./AddRecordingModal";
 import AllLeadsPage from "./AllLeadsPage";
 import LeadGroupsPage from "./LeadGroupsPage";
@@ -27,11 +27,18 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
   const { data: dashboardData, isLoading, error } = useDashboardStats();
   const { data: recordings, isLoading: recordingsLoading } = useRecordings();
   const { data: analyses } = useAnalyses();
+  const { data: leads } = useLeads();
   const deleteRecording = useDeleteRecording();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  // Calculate lead counts from leads table
+  const totalLeads = leads?.length || 0;
+  const hotLeads = leads?.filter(l => l.lead_type?.toLowerCase() === 'hot').length || 0;
+  const warmLeads = leads?.filter(l => l.lead_type?.toLowerCase() === 'warm').length || 0;
+  const coldLeads = leads?.filter(l => l.lead_type?.toLowerCase() === 'cold').length || 0;
   
   // Analysis notifications disabled per user request
   // useAnalysisNotifications();
@@ -170,9 +177,9 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
     }
   };
 
-  const handleRecordingClick = (analysis: Analysis | null, recording: any, recordingName: string) => {
+  const handleRecordingClick = (analysis: Analysis | null, recording: any, recordingName: string, source: 'overview' | 'recordings' = 'recordings') => {
     if (analysis && analysis.status?.toLowerCase() === 'completed') {
-      navigate(`/analysis/${analysis.id}`);
+      navigate(`/analysis/${analysis.id}?from=${source}`);
     } else {
       toast({
         title: "No Analysis Available",
@@ -308,7 +315,7 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
         <main className="flex-1 p-10 bg-background">
           <Tabs value={selectedTab} onValueChange={setSelectedTab}>
             <TabsContent value="overview" className="space-y-8">
-              {/* KPI Cards - Luxury Minimal */}
+              {/* First Row - Main KPIs */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card className="border border-border hover:shadow-md transition-all duration-300">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
@@ -321,6 +328,23 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
                     <div className="text-3xl font-bold tracking-tight text-gray-900">{kpiData.totalCalls}</div>
                     <p className="text-xs text-gray-500 mt-1">
                       Total recorded calls
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="hover:shadow-md transition-all duration-300">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-medium text-gray-600">High Performing</CardTitle>
+                    <div className="p-2 rounded-lg bg-emerald-100">
+                      <Star className="h-5 w-5 text-emerald-600" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-emerald-600">
+                      {kpiData.highPerformingCalls || 0}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Calls with 80%+ sentiment & 75%+ engagement
                     </p>
                   </CardContent>
                 </Card>
@@ -358,157 +382,104 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
                     </p>
                   </CardContent>
                 </Card>
+              </div>
 
+              {/* Second Row - Lead Distribution Chart and Objection Metrics */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Lead Distribution Pie Chart - Spans 2 rows on left */}
+                <Card className="lg:row-span-2 hover:shadow-md transition-all duration-300">
+                  <CardHeader>
+                    <CardTitle>Lead Distribution</CardTitle>
+                    <CardDescription>Distribution by lead type</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex items-center justify-center h-[320px] px-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Hot Leads', value: hotLeads, color: '#ef4444' },
+                            { name: 'Warm Leads', value: warmLeads, color: '#f59e0b' },
+                            { name: 'Cold Leads', value: coldLeads, color: '#3b82f6' },
+                            { name: 'Closing', value: leads?.filter(l => l.lead_type?.toLowerCase() === 'closing').length || 0, color: '#10b981' }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={85}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {[
+                            { name: 'Hot Leads', value: hotLeads, color: '#ef4444' },
+                            { name: 'Warm Leads', value: warmLeads, color: '#f59e0b' },
+                            { name: 'Cold Leads', value: coldLeads, color: '#3b82f6' },
+                            { name: 'Closing', value: leads?.filter(l => l.lead_type?.toLowerCase() === 'closing').length || 0, color: '#10b981' }
+                          ].map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend 
+                          verticalAlign="bottom" 
+                          height={36}
+                          formatter={(value, entry: any) => `${value} (${((entry.payload.value / totalLeads) * 100).toFixed(0)}%)`}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Objections Detected - Square */}
+                <Card className="hover:shadow-md transition-all duration-300">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-medium text-gray-600">Objections Detected</CardTitle>
+                    <div className="p-2 rounded-lg bg-rose-100">
+                      <AlertTriangle className="h-5 w-5 text-rose-600" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex flex-col justify-center h-[120px]">
+                    <div className="text-4xl font-bold text-rose-600">{kpiData.totalObjectionsRaised}</div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Total objections raised
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Objections Handled - Square */}
                 <Card className="hover:shadow-md transition-all duration-300">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <CardTitle className="text-sm font-medium text-gray-600">Objections Handled</CardTitle>
                     <div className="p-2 rounded-lg bg-amber-100">
-                      <AlertTriangle className="h-5 w-5 text-amber-600" />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-amber-600">{kpiData.objectionsHandled}</div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Total objections addressed
-                    </p>
-                  </CardContent>
-                </Card>
-
-
-                <Card className="hover:shadow-md transition-all duration-300">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <CardTitle className="text-sm font-medium text-gray-600">Exec Confidence</CardTitle>
-                    <div className="p-2 rounded-lg bg-blue-100">
-                      <Star className="h-5 w-5 text-blue-600" />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-blue-600">
-                      {kpiData.avgConfidenceExecutive.toFixed(0)}/10
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Average executive confidence
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-md transition-all duration-300">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <CardTitle className="text-sm font-medium text-gray-600">Person Confidence</CardTitle>
-                    <div className="p-2 rounded-lg bg-emerald-100">
-                      <Users className="h-5 w-5 text-emerald-600" />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-emerald-600">
-                      {kpiData.avgConfidencePerson.toFixed(0)}/10
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Average person confidence
-                    </p>
-                  </CardContent>
-                </Card>
-
-
-                <Card className="hover:shadow-md transition-all duration-300">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <CardTitle className="text-sm font-medium text-gray-600">High Performing</CardTitle>
-                    <div className="p-2 rounded-lg bg-emerald-100">
-                      <Star className="h-5 w-5 text-emerald-600" />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-emerald-600">
-                      {kpiData.highPerformingCalls || 0}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Calls with 80%+ sentiment & 75%+ engagement
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-md transition-all duration-300">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <CardTitle className="text-sm font-medium text-gray-600">Action Items</CardTitle>
-                    <div className="p-2 rounded-lg bg-amber-100">
                       <AlertCircle className="h-5 w-5 text-amber-600" />
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-amber-600">
-                      {kpiData.callsWithNextSteps || 0}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Calls with defined next steps
+                  <CardContent className="flex flex-col justify-center h-[120px]">
+                    <div className="text-4xl font-bold text-amber-600">{kpiData.totalObjectionsTackled}</div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Successfully addressed
                     </p>
                   </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-md transition-all duration-300">
+                {/* Objection Success - Rectangle spanning 2 columns */}
+                <Card className="lg:col-span-2 hover:shadow-md transition-all duration-300">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <CardTitle className="text-sm font-medium text-gray-600">Objection Success</CardTitle>
+                    <CardTitle className="text-sm font-medium text-gray-600">Objection Success Rate</CardTitle>
                     <div className="p-2 rounded-lg bg-emerald-100">
                       <ThumbsUp className="h-5 w-5 text-emerald-600" />
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-emerald-600">
-                      {kpiData.objectionSuccessRate.toFixed(0)}%
+                  <CardContent className="flex items-center justify-between h-[120px]">
+                    <div>
+                      <div className="text-4xl font-bold text-emerald-600">
+                        {kpiData.objectionSuccessRate.toFixed(0)}%
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {kpiData.totalObjectionsTackled}/{kpiData.totalObjectionsRaised} objections successfully handled
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {kpiData.totalObjectionsTackled}/{kpiData.totalObjectionsRaised} tackled
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-md transition-all duration-300 border-l-4 border-l-rose-500">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <CardTitle className="text-sm font-medium text-gray-600">Hot Leads</CardTitle>
-                    <div className="p-2 rounded-lg bg-rose-100">
-                      <Flame className="h-5 w-5 text-rose-600" />
+                    <div className="h-20 w-20 rounded-full border-8 border-emerald-200 flex items-center justify-center">
+                      <span className="text-2xl font-bold text-emerald-600">{kpiData.objectionSuccessRate.toFixed(0)}%</span>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-rose-600">
-                      {kpiData.hotLeads || 0}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      High priority prospects
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-md transition-all duration-300 border-l-4 border-l-amber-500">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <CardTitle className="text-sm font-medium text-gray-600">Warm Leads</CardTitle>
-                    <div className="p-2 rounded-lg bg-amber-100">
-                      <Smile className="h-5 w-5 text-amber-600" />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-amber-600">
-                      {kpiData.warmLeads || 0}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Interested prospects
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-md transition-all duration-300 border-l-4 border-l-blue-500">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <CardTitle className="text-sm font-medium text-gray-600">Cold Leads</CardTitle>
-                    <div className="p-2 rounded-lg bg-blue-100">
-                      <Meh className="h-5 w-5 text-blue-600" />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-blue-600">
-                      {kpiData.coldLeads || 0}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Early stage prospects
-                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -517,8 +488,8 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Last 10 Calls - Sentiment Trend</CardTitle>
-                    <CardDescription>Sentiment analysis progression over recent calls</CardDescription>
+                    <CardTitle>Last 10 Calls - Sentiment & Engagement Trend</CardTitle>
+                    <CardDescription>Sentiment and engagement progression over recent calls</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
@@ -527,7 +498,7 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
                         <XAxis dataKey="call" />
                         <YAxis domain={[0, 100]} />
                         <Tooltip 
-                          formatter={(value, name) => [`${value}%`, 'Sentiment']}
+                          formatter={(value, name) => [`${value}%`, name === 'sentiment' ? 'Sentiment' : 'Engagement']}
                           labelFormatter={(label) => {
                             const item = last10CallsSentiment.find(d => d.call === label);
                             return item ? `${item.callName} (${item.date})` : label;
@@ -537,10 +508,20 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
                         <Line 
                           type="monotone" 
                           dataKey="sentiment" 
+                          name="Sentiment"
                           stroke="hsl(var(--success))" 
                           strokeWidth={3}
                           dot={{ fill: 'hsl(var(--success))', strokeWidth: 2, r: 4 }}
                           activeDot={{ r: 6, stroke: 'hsl(var(--success))', strokeWidth: 2 }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="engagement" 
+                          name="Engagement"
+                          stroke="#3b82f6" 
+                          strokeWidth={3}
+                          dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -549,87 +530,56 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Last 10 Calls - Confidence Analysis</CardTitle>
-                    <CardDescription>Executive and Person confidence scores comparison</CardDescription>
+                    <CardTitle>Recent Call Analyses</CardTitle>
+                    <CardDescription>Click on any call to view detailed analysis</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={last10CallsConfidence}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="call" />
-                        <YAxis domain={[0, 10]} />
-                        <Tooltip 
-                          formatter={(value, name) => [`${value}/10`, name === 'executive' ? 'Executive Confidence' : 'Person Confidence']}
-                          labelFormatter={(label) => {
-                            const item = last10CallsConfidence.find(d => d.call === label);
-                            return item ? `${item.callName} (${item.date})` : label;
-                          }}
-                        />
-                        <Legend formatter={(value) => value === 'executive' ? 'Executive Confidence' : 'Person Confidence'} />
-                        <Bar dataKey="executive" fill="hsl(var(--accent-blue))" name="executive" radius={[2, 2, 0, 0]} />
-                        <Bar dataKey="person" fill="hsl(var(--success))" name="person" radius={[2, 2, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <div className="space-y-2">
+                      {recordings?.slice(0, 10).map((recording) => {
+                        const analysis = analyses?.find(a => a.recording_id === recording.id);
+                        const hasAnalysis = analysis && analysis.status?.toLowerCase() === 'completed';
+                        
+                        return (
+                          <div 
+                            key={recording.id} 
+                            className={`flex items-center justify-between p-3 border rounded-lg transition-all ${
+                              hasAnalysis ? 'cursor-pointer hover:bg-slate-50 hover:border-amber-300' : 'opacity-60'
+                            }`}
+                            onClick={() => hasAnalysis && handleRecordingClick(analysis, recording, recording.file_name || 'Unnamed Recording', 'overview')}
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className={`p-2 rounded-lg ${hasAnalysis ? 'bg-amber-100' : 'bg-gray-100'}`}>
+                                <Play className={`h-4 w-4 ${hasAnalysis ? 'text-amber-600' : 'text-gray-400'}`} />
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-medium text-sm text-slate-900">
+                                  {recording.file_name?.replace('.mp3', '').replace('.wav', '').replace('.m4a', '') || 'Unnamed Recording'}
+                                </h4>
+                                <p className="text-xs text-slate-500">
+                                  {new Date(recording.created_at).toLocaleDateString('en-US', { 
+                                    month: 'short', 
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                            {hasAnalysis ? (
+                              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                                View Analysis
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-gray-500">
+                                {analysis?.status === 'processing' ? 'Processing...' : 'Pending'}
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
-
-              {/* Recent Calls */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Call Analyses</CardTitle>
-                  <CardDescription>Latest processed recordings</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {recentCalls.map((call) => (
-                      <div key={call.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <Button variant="ghost" size="icon">
-                            <Play className="h-4 w-4" />
-                          </Button>
-                          <div>
-                            <h4 className="font-medium">{call.name}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {call.date} • {call.duration}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-8">
-                          <div className="text-center">
-                            <p className="text-xs text-muted-foreground">Sentiment</p>
-                            <p className={`font-medium ${getSentimentColor(call.sentiment)}`}>
-                              {call.sentiment.toFixed(0)}%
-                            </p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-xs text-muted-foreground">Engagement</p>
-                            <p className="font-medium text-accent-blue">
-                              {call.engagement.toFixed(0)}%
-                            </p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-xs text-muted-foreground">Exec Conf.</p>
-                            <p className="font-medium text-success">
-                              {call.confidenceExecutive}/10
-                            </p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-xs text-muted-foreground">Person Conf.</p>
-                            <p className="font-medium text-accent-blue">
-                              {call.confidencePerson}/10
-                            </p>
-                          </div>
-                          {getStatusBadge(call.status)}
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
 
             <TabsContent value="recordings" className="space-y-6">
@@ -778,7 +728,7 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
                               )}
                               {analysis.lead_type && (
                                 <div className="text-center">
-                                  <p className="text-xs text-slate-600 mb-1">Lead Type</p>
+                                  <p className="text-xs text-slate-600 mb-1">Call Type</p>
                                   <p className="text-sm font-medium text-slate-900">
                                     {analysis.lead_type}
                                   </p>
@@ -788,54 +738,58 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
                           )}
 
                           {/* Action Buttons */}
-                          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-slate-200" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex gap-2 pt-4 border-t border-slate-200" onClick={(e) => e.stopPropagation()}>
                             {hasDetailedAnalysis ? (
                               <Button 
+                                size="sm"
                                 variant="default"
-                                className="w-full bg-amber-500 hover:bg-amber-600"
+                                className="bg-amber-500 hover:bg-amber-600 text-xs rounded-md"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleRecordingClick(analysis, recording, recording.file_name || 'Unnamed Recording');
                                 }}
                               >
-                                <Play className="h-4 w-4 mr-2" />
+                                <Play className="h-3.5 w-3.5 mr-1.5" />
                                 View Analysis
                               </Button>
                             ) : (
                               <Button 
+                                size="sm"
                                 variant="outline"
-                                className="w-full"
+                                className="text-xs rounded-md"
                                 disabled
                               >
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                                 Processing
                               </Button>
                             )}
                             
                             {(analysis?.status === 'failed' || analysis?.status === 'error') && (
                               <Button 
+                                size="sm"
                                 variant="outline" 
-                                className="w-full text-blue-600 hover:bg-blue-50 border-blue-200"
+                                className="text-blue-600 hover:bg-blue-50 border-blue-200 text-xs rounded-md"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleRetryRecording(recording, analysis);
                                 }}
                               >
-                                <RefreshCw className="h-4 w-4 mr-2" />
+                                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                                 Retry
                               </Button>
                             )}
                             
                             <Button 
+                              size="sm"
                               variant="outline"
-                              className="w-full text-rose-600 hover:bg-rose-50 border-rose-200"
+                              className="text-rose-600 hover:bg-rose-50 border-rose-200 text-xs rounded-md"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteRecording(recording.id, recording.file_name || 'Unnamed Recording');
                               }}
                               disabled={deleteRecording.isPending}
                             >
-                              <Trash2 className="h-4 w-4 mr-2" />
+                              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                               Delete
                             </Button>
                           </div>

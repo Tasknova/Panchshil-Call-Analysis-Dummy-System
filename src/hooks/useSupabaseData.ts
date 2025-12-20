@@ -250,8 +250,9 @@ export function useDashboardStats() {
         // Last 10 calls sentiment trend data for line chart
         last10CallsSentiment: analyses.slice(0, 10).reverse().map((analysis, index) => ({
           call: `Call ${index + 1}`,
-          callName: analysis.recordings?.file_name?.replace('.mp3', '').substring(0, 10) || `Call ${index + 1}`,
+          callName: analysis.recordings?.file_name?.replace('.mp3', '').replace('.wav', '').replace('.m4a', '') || `Call ${index + 1}`,
           sentiment: Math.round(analysis.sentiments_score || 0),
+          engagement: Math.round(analysis.engagement_score || 0),
           date: new Date(analysis.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
         })),
         
