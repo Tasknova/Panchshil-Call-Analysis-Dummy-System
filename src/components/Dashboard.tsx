@@ -535,7 +535,7 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {recordings?.slice(0, 10).map((recording) => {
+                      {recordings?.slice(0, 5).map((recording) => {
                         const analysis = analyses?.find(a => a.recording_id === recording.id);
                         const hasAnalysis = analysis && analysis.status?.toLowerCase() === 'completed';
                         

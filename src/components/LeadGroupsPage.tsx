@@ -104,12 +104,12 @@ export default function LeadGroupsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Lead Groups</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Lead Groups</h1>
+          <p className="text-slate-600 mt-1">
             Organize your leads into groups for better management
           </p>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)}>
+        <Button onClick={() => setIsAddModalOpen(true)} className="shadow-sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Group
         </Button>
@@ -117,42 +117,48 @@ export default function LeadGroupsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
+        <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Groups</CardTitle>
-            <FolderOpen className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Total Groups</CardTitle>
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <FolderOpen className="h-4 w-4 text-blue-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{leadGroups?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-slate-900">{leadGroups?.length || 0}</div>
+            <p className="text-xs text-slate-600">
               Groups created
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Leads</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Total Leads</CardTitle>
+            <div className="p-2 bg-emerald-100 rounded-lg">
+              <Users className="h-4 w-4 text-emerald-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{allLeads?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-slate-900">{allLeads?.length || 0}</div>
+            <p className="text-xs text-slate-600">
               Leads across all groups
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Leads/Group</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Avg Leads/Group</CardTitle>
+            <div className="p-2 bg-amber-100 rounded-lg">
+              <Users className="h-4 w-4 text-amber-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-slate-900">
               {leadGroups?.length ? Math.round((allLeads?.length || 0) / leadGroups.length) : 0}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-600">
               Average leads per group
             </p>
           </CardContent>
@@ -160,75 +166,77 @@ export default function LeadGroupsPage() {
       </div>
 
       {/* Groups List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Groups</CardTitle>
-          <CardDescription>
+      <Card className="shadow-md">
+        <CardHeader className="border-b border-slate-100">
+          <CardTitle className="text-slate-900">Groups</CardTitle>
+          <CardDescription className="text-slate-600">
             Manage your lead groups
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-2 mb-4">
+        <CardContent className="pt-6">
+          <div className="flex items-center space-x-2 mb-6">
             <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
               <Input
                 placeholder="Search groups..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
+                className="pl-9 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
           </div>
 
           {filteredGroups.length === 0 ? (
-            <div className="text-center py-8">
-              <FolderOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No groups found</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm ? "No groups match your search criteria." : "Create your first group to organize your leads."}
+            <div className="text-center py-16 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="bg-white rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <FolderOpen className="h-10 w-10 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">No groups found</h3>
+              <p className="text-slate-600 mb-6 max-w-sm mx-auto">
+                {searchTerm ? "No groups match your search criteria. Try adjusting your search." : "Create your first group to organize your leads."}
               </p>
               {!searchTerm && (
-                <Button onClick={() => setIsAddModalOpen(true)}>
+                <Button onClick={() => setIsAddModalOpen(true)} className="shadow-sm">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Group
                 </Button>
               )}
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-lg border border-slate-200 overflow-hidden shadow-sm">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Group Name</TableHead>
-                    <TableHead>Leads Count</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="w-[50px]">Actions</TableHead>
+                  <TableRow className="bg-slate-50 hover:bg-slate-50 border-b border-slate-200">
+                    <TableHead className="font-semibold text-slate-700">Group Name</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Leads Count</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Created</TableHead>
+                    <TableHead className="w-[50px] font-semibold text-slate-700">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredGroups.map((group) => {
                     const leadsInGroup = getLeadsInGroup(group.id);
                     return (
-                      <TableRow key={group.id}>
+                      <TableRow key={group.id} className="hover:bg-slate-50 transition-colors">
                         <TableCell className="font-medium">
                           <div 
-                            className="flex items-center gap-2 cursor-pointer hover:text-accent-blue transition-colors"
+                            className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors"
                             onClick={() => navigate(`/group/${group.id}`)}
                           >
-                            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                            {group.group_name}
+                            <FolderOpen className="h-4 w-4 text-slate-400" />
+                            <span className="text-slate-900">{group.group_name}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <Badge 
-                            variant="secondary"
-                            className="cursor-pointer hover:bg-accent-blue/10 transition-colors"
+                            variant="outline"
+                            className="cursor-pointer hover:bg-blue-50 transition-colors bg-blue-50 text-blue-700 border-blue-200 font-medium"
                             onClick={() => navigate(`/group/${group.id}`)}
                           >
                             {leadsInGroup.length} leads
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-slate-600 text-sm">
                           {new Date(group.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell>

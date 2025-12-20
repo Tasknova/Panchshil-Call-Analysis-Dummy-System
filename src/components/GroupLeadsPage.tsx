@@ -139,108 +139,107 @@ export default function GroupLeadsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <Button variant="outline" onClick={() => navigate('/')} className="mr-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Groups
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Leads in "{currentGroup.group_name}"
-            </h1>
-            <p className="text-muted-foreground">
-              Viewing leads for this specific group
-            </p>
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/?view=dashboard&tab=leads')}
+                className="border-slate-300 hover:bg-slate-50"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Groups
+              </Button>
+              <div className="h-8 w-px bg-slate-200" />
+              <div>
+                <h1 className="text-xl font-semibold text-slate-900">
+                  Leads in "{currentGroup.group_name}"
+                </h1>
+                <p className="text-sm text-slate-600 mt-0.5">
+                  {filteredLeads.length} {filteredLeads.length === 1 ? 'lead' : 'leads'} in this group
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Stats Card */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Leads in Group</CardTitle>
-          <User className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{filteredLeads.length}</div>
-          <p className="text-xs text-muted-foreground">
-            {filteredLeads.length === 1 ? 'Lead' : 'Leads'} in "{currentGroup.group_name}" group
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Leads Table */}
-      <Card>
-        <CardHeader>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="space-y-6">
+      <Card className="shadow-md">
+        <CardHeader className="border-b border-slate-100">
           <CardTitle>Leads in "{currentGroup.group_name}"</CardTitle>
           <CardDescription>
             Search and manage leads in this group
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-2 mb-4">
+        <CardContent className="pt-6">
+          <div className="flex items-center space-x-2 mb-6">
             <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
               <Input
                 placeholder="Search leads by name, email, or contact..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
+                className="pl-9 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
           </div>
 
-          {filteredLeads.length === 0 ? (
-            <div className="text-center py-8">
-              <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No leads found in this group</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm 
-                  ? "No leads match your search criteria." 
-                  : "This group doesn't have any leads yet."
-                }
-              </p>
-              <Button onClick={() => navigate('/')}>
-                Return to Dashboard
-              </Button>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="w-[50px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              {filteredLeads.length === 0 ? (
+                <div className="text-center py-16 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="bg-white rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-sm">
+                    <User className="h-10 w-10 text-slate-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">No leads found in this group</h3>
+                  <p className="text-slate-600 mb-6 max-w-sm mx-auto">
+                    {searchTerm 
+                      ? "No leads match your search criteria. Try adjusting your search." 
+                      : "This group doesn't have any leads yet. Add leads from the dashboard."
+                    }
+                  </p>
+                  <Button onClick={() => navigate('/?view=dashboard&tab=leads')} variant="outline" className="shadow-sm">
+                    Return to Dashboard
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50 hover:bg-slate-50 border-b border-slate-200">
+                        <TableHead className="font-semibold text-slate-700">Name</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Project</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Email</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Contact</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Description</TableHead>
+                        <TableHead className="w-[50px] font-semibold text-slate-700">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                   {filteredLeads.map((lead) => (
-                    <TableRow key={lead.id}>
-                      <TableCell className="font-medium">{lead.name}</TableCell>
+                    <TableRow key={lead.id} className="hover:bg-slate-50 transition-colors">
+                      <TableCell className="font-medium text-slate-900">{lead.name}</TableCell>
                       <TableCell>
                         {lead.project && (
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs font-medium">
                             {lead.project}
                           </Badge>
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          {lead.email}
+                        <div className="flex items-center gap-2 text-slate-600">
+                          <Mail className="h-3.5 w-3.5 text-slate-400" />
+                          <span className="text-sm">{lead.email}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          {lead.contact}
+                        <div className="flex items-center gap-2 text-slate-600">
+                          <Phone className="h-3.5 w-3.5 text-slate-400" />
+                          <span className="text-sm">{lead.contact}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -275,12 +274,14 @@ export default function GroupLeadsPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </main>
 
       {/* Edit Lead Modal */}
       {editingLead && (
