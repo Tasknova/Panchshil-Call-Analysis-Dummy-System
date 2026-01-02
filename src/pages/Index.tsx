@@ -3,8 +3,9 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import LandingPage from "@/components/LandingPage";
 import Dashboard from "@/components/Dashboard";
 import ProfilePage from "@/components/ProfilePage";
+import BrainPage from "@/components/BrainPage";
 
-type ViewType = 'landing' | 'dashboard' | 'profile';
+type ViewType = 'landing' | 'dashboard' | 'profile' | 'brain';
 
 const Index = () => {
   const [searchParams] = useSearchParams();
@@ -36,6 +37,10 @@ const Index = () => {
     setCurrentView('profile');
   };
 
+  const handleShowBrain = () => {
+    setCurrentView('brain');
+  };
+
   const handleBackToDashboard = () => {
     setCurrentView('dashboard');
   };
@@ -48,8 +53,11 @@ const Index = () => {
     case 'profile':
       return <ProfilePage onBack={handleBackToDashboard} />;
     
+    case 'brain':
+      return <BrainPage onBack={handleBackToDashboard} />;
+    
     case 'dashboard':
-      return <Dashboard onShowProfile={handleShowProfile} />;
+      return <Dashboard onShowProfile={handleShowProfile} onShowBrain={handleShowBrain} />;
     
     default:
       return <LandingPage onGetStarted={handleGetStarted} />;

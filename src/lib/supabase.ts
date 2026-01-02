@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://enzdgtwrrclozeyujkni.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVuemRndHdycmNsb3pleXVqa25pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNDAyODUsImV4cCI6MjA3NzgxNjI4NX0.Mp6PVNDo8yfZbMBbAqfo_xZ8caVJxbh6mHySkLU7zeA'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://lfpsgpumofgdhpihzqgp.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MulddMIIdZBYSrxALyMjog_n91SiGuo'
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
@@ -105,4 +105,54 @@ export interface Lead {
   created_at: string
   updated_at: string
   lead_groups?: LeadGroup // Joined data
+}
+
+export interface CompanyBrain {
+  id: string
+  user_id: string
+  company_name?: string
+  company_tagline?: string
+  company_description?: string
+  industry?: string
+  founded_year?: number
+  company_size?: string
+  headquarters_location?: string
+  website_url?: string
+  contact_email?: string
+  contact_phone?: string
+  mission_statement?: string
+  vision_statement?: string
+  core_values?: string[]
+  unique_selling_points?: string[]
+  target_audience?: string
+  products_services?: any
+  pricing_model?: string
+  key_features?: string[]
+  founder_info?: string
+  leadership_team?: any
+  team_size_details?: string
+  additional_context?: string
+  custom_fields?: any
+  created_at: string
+  updated_at: string
+}
+
+export interface BrainDocument {
+  id: string
+  user_id: string
+  company_brain_id?: string
+  file_name: string
+  file_type: string
+  file_size?: number
+  storage_path: string
+  storage_url?: string
+  mime_type?: string
+  title?: string
+  description?: string
+  tags?: string[]
+  category?: string
+  status?: string
+  extracted_text?: string
+  created_at: string
+  updated_at: string
 }

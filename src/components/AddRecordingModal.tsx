@@ -491,16 +491,14 @@ export default function AddRecordingModal({ open, onOpenChange, onRecordingAdded
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <img 
-              src="/panchsil_logo.png.jpg" 
-              alt="Panchshil" 
-              className="h-5 w-auto"
-            />
+            <div className="h-5 w-5 rounded bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center">
+              <span className="text-white font-bold text-xs">C</span>
+            </div>
             <Upload className="h-5 w-5" />
             Add New Call
           </DialogTitle>
           <DialogDescription>
-            Upload an audio/video file or paste a transcript for analysis by <span className="font-semibold text-accent-blue">Tasknova</span> AI.
+            Upload an audio/video file or paste a transcript for analysis by <span className="font-semibold text-primary">Ceipal</span> AI.
           </DialogDescription>
         </DialogHeader>
         

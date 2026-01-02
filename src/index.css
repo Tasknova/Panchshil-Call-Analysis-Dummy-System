@@ -8,25 +8,25 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Panchshil Luxury Theme - Premium Real Estate Aesthetic */
-    --background: 0 0% 96%;
-    --foreground: 0 0% 10%;
+    /* Ceipal Theme - AI Powered. People Driven. */
+    --background: 0 0% 98%;
+    --foreground: 210 20% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 210 20% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 210 20% 15%;
 
-    /* Deep charcoal primary - luxury foundation */
-    --primary: 0 0% 10%;
-    --primary-foreground: 0 0% 96%;
-    --primary-hover: 0 0% 15%;
+    /* Primary Blue - trust, reliability, enterprise tech */
+    --primary: 210 90% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 210 90% 42%;
     
-    /* Muted gold/bronze accent - subtle luxury highlights */
-    --accent-blue: 40 35% 55%;
-    --accent-blue-hover: 40 40% 50%;
-    --accent-blue-light: 40 35% 95%;
+    /* Vibrant Orange - energy, warmth, human touch */
+    --accent-blue: 25 95% 53%;
+    --accent-blue-hover: 25 95% 47%;
+    --accent-blue-light: 25 95% 96%;
 
     /* Warm greys - elegant neutrals */
     --secondary: 0 0% 92%;
@@ -68,23 +68,23 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* Dark mode maintains luxury aesthetic with inverted tones */
-    --background: 0 0% 10%;
+    /* Ceipal Dark Mode - modern tech aesthetic */
+    --background: 210 20% 8%;
     --foreground: 0 0% 96%;
 
-    --card: 0 0% 12%;
+    --card: 210 20% 10%;
     --card-foreground: 0 0% 96%;
 
-    --popover: 0 0% 12%;
+    --popover: 210 20% 10%;
     --popover-foreground: 0 0% 96%;
 
-    --primary: 0 0% 96%;
-    --primary-foreground: 0 0% 10%;
-    --primary-hover: 0 0% 85%;
+    --primary: 210 90% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 210 90% 48%;
 
-    --accent-blue: 40 40% 60%;
-    --accent-blue-hover: 40 45% 55%;
-    --accent-blue-light: 40 35% 15%;
+    --accent-blue: 25 95% 58%;
+    --accent-blue-hover: 25 95% 52%;
+    --accent-blue-light: 25 95% 15%;
 
     --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 96%;
@@ -135,7 +135,7 @@ All colors MUST be HSL.
     line-height: 1.6;
   }
 
-  /* Panchshil Typography - Clean, modern, spacious */
+  /* Ceipal Typography - Clean, modern, tech-focused */
   h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
     letter-spacing: 0.02em;

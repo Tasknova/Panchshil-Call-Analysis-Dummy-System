@@ -271,11 +271,9 @@ export default function AnalysisDetail() {
                 Back
               </Button>
               <Separator orientation="vertical" className="h-8" />
-              <img 
-                src="/panchsil_logo.png.jpg" 
-                alt="Panchshil" 
-                className="h-10 w-auto"
-              />
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center">
+                <span className="text-white font-bold text-lg">C</span>
+              </div>
               <div>
                 <h1 className="text-xl font-bold text-slate-900">Call Analysis Report</h1>
                 <p className="text-sm text-slate-600 flex items-center gap-2">

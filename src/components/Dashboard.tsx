@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Upload, Play, Download, MoreHorizontal, TrendingUp, TrendingDown, Users, Phone, Star, AlertTriangle, Trash2, BarChart3, Loader2, User, UserPlus, FolderOpen, FileSpreadsheet, RefreshCw, Smile, Meh, Frown, Flame, ThumbsUp, ThumbsDown, Zap, HelpCircle, AlertCircle, Clock } from "lucide-react";
+import { Upload, Play, Download, MoreHorizontal, TrendingUp, TrendingDown, Users, Phone, Star, AlertTriangle, Trash2, BarChart3, Loader2, User, UserPlus, FolderOpen, FileSpreadsheet, RefreshCw, Smile, Meh, Frown, Flame, ThumbsUp, ThumbsDown, Zap, HelpCircle, AlertCircle, Clock, Brain } from "lucide-react";
 import { useDashboardStats, useRecordings, useAnalyses, useDeleteRecording, useLeads } from "@/hooks/useSupabaseData";
 import AddRecordingModal from "./AddRecordingModal";
 import AllLeadsPage from "./AllLeadsPage";
@@ -18,9 +18,10 @@ import { Analysis } from "@/lib/supabase";
 
 interface DashboardProps {
   onShowProfile?: () => void;
+  onShowBrain?: () => void;
 }
 
-export default function Dashboard({ onShowProfile }: DashboardProps) {
+export default function Dashboard({ onShowProfile, onShowBrain }: DashboardProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'overview';
   const [selectedTab, setSelectedTab] = useState(initialTab);
@@ -270,18 +271,16 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header - Luxury Minimal */}
+      {/* Header - Clean Modern */}
       <header className="border-b border-border bg-card px-8 py-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-6">
-            <img 
-              src="/panchsil_logo.png.jpg" 
-              alt="Panchshil" 
-              className="h-12 w-auto cursor-pointer hover:opacity-70 transition-opacity duration-300"
-              onClick={() => navigate('/')}
-            />
+            <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity duration-300" onClick={() => navigate('/')}>
+              <span className="text-white font-bold text-xl">C</span>
+            </div>
             <div className="border-l border-border pl-6">
-              <h1 className="text-xl font-semibold text-foreground tracking-wide">Voice Intelligence</h1>
+              <h1 className="text-xl font-semibold text-primary tracking-wide">Ceipal Voice Intelligence</h1>
+              <p className="text-xs text-muted-foreground">AI Powered. People Driven.</p>
             </div>
           </div>
           <Button 
@@ -323,6 +322,16 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
               >
                 <UserPlus className="h-4 w-4 mr-3" />
                 Leads
+              </Button>
+              
+              {/* Brain Section */}
+              <Button 
+                variant="ghost"
+                className="w-full justify-start font-medium text-sm transition-all text-muted-foreground hover:text-foreground hover:bg-gray-50"
+                onClick={onShowBrain}
+              >
+                <Brain className="h-4 w-4 mr-3" />
+                Company Brain
               </Button>
           </nav>
         </aside>
@@ -436,8 +445,12 @@ export default function Dashboard({ onShowProfile }: DashboardProps) {
                         <Tooltip />
                         <Legend 
                           verticalAlign="bottom" 
-                          height={36}
-                          formatter={(value, entry: any) => `${value} (${((entry.payload.value / totalLeads) * 100).toFixed(0)}%)`}
+                          height={40}
+                          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                          formatter={(value, entry: any) => {
+                            const percentage = totalLeads > 0 ? ((entry.payload.value / totalLeads) * 100).toFixed(0) : 0;
+                            return `${value} (${percentage}%)`;
+                          }}
                         />
                       </PieChart>
                     </ResponsiveContainer>

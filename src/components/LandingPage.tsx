@@ -57,13 +57,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-3">
-              <img 
-                src="/panchsil_logo.png.jpg" 
-                alt="Panchshil" 
-                className="h-12 w-auto cursor-pointer hover:opacity-70 transition-opacity duration-300"
-                onClick={() => window.location.href = '/'}
-              />
-              <span className="text-xl font-semibold tracking-wide">Panchshil Reality</span>
+              <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity duration-300" onClick={() => window.location.href = '/'}>
+                <span className="text-white font-bold text-xl">C</span>
+              </div>
+              <div>
+                <span className="text-xl font-semibold tracking-wide text-primary">Ceipal</span>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">AI Voice Intelligence</p>
+              </div>
             </div>
             <div>
               <Button 
@@ -83,27 +83,27 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div className="space-y-8">
               <div className="flex items-center">
-                <div className="h-px w-12 bg-accent-blue mr-4"></div>
-                <span className="text-sm tracking-widest text-muted-foreground uppercase">Panchshil Voice Intelligence</span>
+                <div className="h-px w-12 bg-gradient-to-r from-primary to-accent-blue mr-4"></div>
+                <span className="text-sm tracking-widest text-muted-foreground uppercase">AI Powered. People Driven.</span>
               </div>
               <h1 className="text-6xl font-bold leading-tight tracking-tight">
-                Elevate Your
+                Transform
                 <br />
-                <span className="text-primary">Communication</span>
+                <span className="text-primary">Talent Acquisition</span>
                 <br />
-                Excellence
+                <span className="text-accent-blue">with AI</span>
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed max-w-lg">
-                Premium AI-powered voice analysis for discerning professionals. 
-                Transform conversations into actionable intelligence with unparalleled precision.
+                AI-powered voice analysis platform built for recruiters and staffing agencies. 
+                Automate candidate screening, analyze interview calls, and make data-driven hiring decisions.
               </p>
               <div className="flex justify-start pt-4">
                 <Button 
                   size="lg" 
                   onClick={onGetStarted}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-6 text-base tracking-widest uppercase font-medium transition-all duration-300"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-6 text-base tracking-widest uppercase font-medium transition-all duration-300 shadow-lg hover:shadow-xl"
                 >
-                  Begin Your Journey
+                  Get Started Free
                   <ArrowRight className="h-5 w-5 ml-2" />
                 </Button>
               </div>
@@ -212,12 +212,12 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="mx-auto max-w-7xl">
           <div className="mb-20">
             <div className="flex items-center mb-6">
-              <div className="h-px w-12 bg-accent-blue mr-4"></div>
+              <div className="h-px w-12 bg-gradient-to-r from-primary to-accent-blue mr-4"></div>
               <span className="text-sm tracking-widest text-muted-foreground uppercase">Capabilities</span>
             </div>
-            <h2 className="text-5xl font-bold mb-6 tracking-tight">Excellence in Every Detail</h2>
+            <h2 className="text-5xl font-bold mb-6 tracking-tight">AI-Powered Recruiting Intelligence</h2>
             <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
-              Precision-engineered tools for the modern professional
+              Automate the boring work so recruiters can focus on what matters: people.
             </p>
           </div>
           
@@ -245,9 +245,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="mx-auto max-w-6xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-4xl font-bold mb-6">Why Choose Our Platform?</h2>
+              <h2 className="text-4xl font-bold mb-6">Why Recruiters Choose Ceipal?</h2>
               <p className="text-xl text-muted-foreground mb-8">
-                Join hundreds of sales teams who have transformed their call performance with our AI-powered insights.
+                Join thousands of recruiters and staffing agencies who have transformed their hiring process with our AI-powered platform.
               </p>
               <div className="space-y-4">
                 {benefits.map((benefit, index) => (
@@ -260,21 +260,21 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </div>
             
             <div className="grid grid-cols-2 gap-6">
-              <Card className="text-center p-6">
-                <div className="text-3xl font-bold text-accent-blue mb-2">90%</div>
-                <div className="text-muted-foreground">Time Savings</div>
+              <Card className="text-center p-6 border-2 hover:border-primary transition-colors">
+                <div className="text-3xl font-bold text-primary mb-2">200K+</div>
+                <div className="text-muted-foreground">Recruiters</div>
               </Card>
-              <Card className="text-center p-6">
-                <div className="text-3xl font-bold text-success mb-2">34%</div>
-                <div className="text-muted-foreground">Conversion Boost</div>
+              <Card className="text-center p-6 border-2 hover:border-accent-blue transition-colors">
+                <div className="text-3xl font-bold text-accent-blue mb-2">2,500+</div>
+                <div className="text-muted-foreground">Clients</div>
               </Card>
-              <Card className="text-center p-6">
-                <div className="text-3xl font-bold text-warning mb-2">5 Min</div>
-                <div className="text-muted-foreground">Analysis Time</div>
+              <Card className="text-center p-6 border-2 hover:border-success transition-colors">
+                <div className="text-3xl font-bold text-success mb-2">97%</div>
+                <div className="text-muted-foreground">Satisfaction</div>
               </Card>
-              <Card className="text-center p-6">
-                <div className="text-3xl font-bold text-primary mb-2">500+</div>
-                <div className="text-muted-foreground">Happy Teams</div>
+              <Card className="text-center p-6 border-2 hover:border-warning transition-colors">
+                <div className="text-3xl font-bold text-warning mb-2">80%</div>
+                <div className="text-muted-foreground">Time Saved</div>
               </Card>
             </div>
           </div>
@@ -285,20 +285,17 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <img 
-                src="/panchsil_logo.png.jpg" 
-                alt="Panchshil" 
-                className="h-8 w-auto cursor-pointer hover:opacity-70 transition-opacity duration-300"
-                onClick={() => window.location.href = '/'}
-              />
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center">
+                <span className="text-white font-bold text-lg">C</span>
+              </div>
               <div>
-                <p className="font-semibold text-foreground">Panchshil</p>
-                <p className="text-sm text-muted-foreground">Voice Intelligence Platform</p>
+                <p className="font-semibold text-foreground">Ceipal</p>
+                <p className="text-sm text-muted-foreground">AI Powered. People Driven.</p>
               </div>
             </div>
             <div className="text-center md:text-right">
               <p className="text-sm text-muted-foreground">
-                © 2025 Panchshil Realty. All rights reserved.
+                © 2025 Ceipal. All rights reserved.
               </p>
             </div>
           </div>
